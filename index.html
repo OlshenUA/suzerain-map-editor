@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Kurale&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ruslan+Display&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=22">
+<link rel="stylesheet" href="css/style.css?v=24">
 </head>
 <body>
 <div class="app">
@@ -29,6 +29,7 @@
     </div>
     <div class="spacer"></div>
     <span class="status" id="status">Завантаження…</span>
+    <button class="btn solid" id="aiBtn" title="Запит до ШІ: скопіювати мапу з інструкцією, вставити відповідь, порівняти до / після">ШІ</button>
     <button class="btn solid" id="libBtn" title="Мої мапи: нова, відкрити, перейменувати, копія">Мапи</button>
     <button class="btn solid" id="fit">Вся мапа</button>
     <button class="btn solid" id="jsonBtn">JSON</button>
@@ -77,6 +78,13 @@
     <div class="stage" id="stage">
       <canvas id="view" aria-label="Мапа півночі з зонами для редагування"></canvas>
       <div class="busy" id="busy">Перемальовую…</div>
+      <div class="aibar" id="aiBar" hidden>
+        <div class="aibar-row"><b>Зміни ШІ</b><span id="aiCount" class="aicount"></span>
+          <div class="seg"><button class="btn" data-ai="before" aria-pressed="false" title="C — перемкнути">До</button><button class="btn" data-ai="after" aria-pressed="true" title="C — перемкнути">Після</button></div>
+          <button class="btn solid" id="aiList">Список</button><span class="spacer"></span>
+          <button class="btn solid" id="aiDiscard">Скинути</button><button class="btn primary ai-keep" id="aiSave">Зберегти</button></div>
+        <div id="aiChanges" class="aichanges" hidden></div>
+      </div>
     </div>
     <aside class="side" id="side"></aside>
   </div>
@@ -153,6 +161,19 @@
     <div class="btns"><button class="btn solid" id="bdReset">Скинути</button><span class="spacer"></span><button class="btn solid" id="bdCancel">Скасувати</button><button class="btn primary" id="bdApply">Застосувати</button></div>
   </div>
 </div>
+<div class="modal dock" id="aiModal" role="dialog" aria-labelledby="aiTitle">
+  <div class="card" style="max-width:440px">
+    <h3 id="aiTitle">ШІ</h3>
+    <p>Опишіть зміни, скопіюйте запит і дайте його будь-якому ШІ (Claude, ChatGPT, Gemini, локальна модель). Відповідь вставте нижче — побачите «до / після» і вирішите, зберегти чи скинути.</p>
+    <div class="row"><label for="aiReq">1. Що змінити на мапі?</label><textarea id="aiReq" rows="3" style="font:inherit;font-size:14px" placeholder="Напр.: зроби вибрану сушу більшою на 20 %; додай сніг на північних горах; заміни ліс на листяний"></textarea></div>
+    <div class="row"><label for="aiScope">Що надіслати</label><select id="aiScope"><option value="full">Уся мапа (точніше)</option><option value="summary">Зведення + вибране (менше тексту)</option></select></div>
+    <div class="btns"><button class="btn primary" id="aiCopy">Скопіювати для ШІ</button><button class="btn solid" id="aiFile">Зберегти у файл</button></div>
+    <p class="help" id="aiInfo" style="padding:0;margin:8px 0 0"></p>
+    <div class="row" style="margin-top:14px"><label for="aiAns">2. Вставте відповідь ШІ</label><textarea id="aiAns" rows="5" placeholder="Уся відповідь разом із блоком map-patch"></textarea></div>
+    <p class="help aierrtxt" id="aiErr" style="padding:0;margin:0 0 8px"></p>
+    <div class="btns"><span class="spacer"></span><button class="btn solid" id="aiClose">Закрити</button><button class="btn primary" id="aiPreviewBtn">Переглянути зміни</button></div>
+  </div>
+</div>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
   <div class="card wide">
     <h3 id="helpTitle">Як користуватися редактором</h3>
@@ -183,6 +204,12 @@
     <ul class="help">
       <li>Мишкою вибираються лише ті типи, що увімкнені в бічній панелі. Якщо контури вимкнено, зони не вибираються.</li>
     </ul>
+    <h4>ШІ</h4>
+    <ul class="help">
+      <li>Кнопка «ШІ»: опишіть зміни («зроби цю сушу більшою», «додай сніг на півночі»), натисніть «Скопіювати для ШІ» й вставте в будь-який чат ШІ. Вибрана на мапі фігура теж потрапляє в запит.</li>
+      <li>Відповідь ШІ вставте в поле й натисніть «Переглянути зміни». Змінене підсвічується: <span style="color:#ffb02e">змінено</span>, <span style="color:#5fd068">додано</span>, <span style="color:#ff5a4a">видалено</span>. «До / Після» (або <kbd>C</kbd>) — порівняти; мапу можна рухати й масштабувати.</li>
+      <li>«Зберегти» — прийняти (скасовується «Назад»), «Скинути» — повернути як було. Формат для ШІ: файл AI.md у репозиторії.</li>
+    </ul>
     <h4>Мапи й файли</h4>
     <ul class="help">
       <li>«Мапи» або клік по назві зліва вгорі — список ваших мап: відкрити, перейменувати, копія, видалити, «Як шаблон».</li>
@@ -196,14 +223,15 @@
 <div class="toast" id="toast" role="status"></div>
 
 
-<script src="js/default-map.js?v=22"></script>
-<script src="js/core.js?v=22"></script>
-<script src="js/render.js?v=22"></script>
-<script src="js/nature.js?v=22"></script>
-<script src="js/generators.js?v=22"></script>
-<script src="js/templates.js?v=22"></script>
-<script src="js/library.js?v=22"></script>
-<script src="js/brush.js?v=22"></script>
-<script src="js/ui.js?v=22"></script>
+<script src="js/default-map.js?v=24"></script>
+<script src="js/core.js?v=24"></script>
+<script src="js/render.js?v=24"></script>
+<script src="js/nature.js?v=24"></script>
+<script src="js/generators.js?v=24"></script>
+<script src="js/templates.js?v=24"></script>
+<script src="js/library.js?v=24"></script>
+<script src="js/brush.js?v=24"></script>
+<script src="js/ai.js?v=24"></script>
+<script src="js/ui.js?v=24"></script>
 </body>
 </html>

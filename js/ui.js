@@ -23,6 +23,7 @@ function draw(){
   if (selected){ outline(g, selected, px, true); drawGhost(g, px); }
   drawDecor(g);
   drawBrushPreview(g, px);
+  drawAIHighlights(g, px);
   drawBoundsPreview(g, px);
   if (selObj){ const b = selObj.type === 'text' ? [selObj.o.x, selObj.o.y, selObj.o.x + selObj.o.w, selObj.o.y + selObj.o.h] : stampBox(selObj.o);
     g.setLineDash([6*px, 4*px]); g.strokeStyle = '#d39a4a'; g.lineWidth = 1.8*px; g.strokeRect(b[0], b[1], b[2]-b[0], b[3]-b[1]); g.setLineDash([]);
@@ -188,6 +189,7 @@ function pos(e){ const r = view.getBoundingClientRect(); return [e.clientX - r.l
 view.addEventListener('contextmenu', e => e.preventDefault());
 view.addEventListener('pointerdown', e => {
   view.setPointerCapture(e.pointerId); const [sx, sy] = pos(e); const [x, y] = toWorld(sx, sy);
+  if (aiPreview){ drag = {type: 'pan', sx, sy, ox: vs.ox, oy: vs.oy, moved: true}; return; } // перегляд змін ШІ: лише рух мапою
   if (e.button === 1 || e.button === 2 && tool !== 'select' || spaceDown){ drag = {type: 'pan', sx, sy, ox: vs.ox, oy: vs.oy}; return; }
   if (tool === 'select'){
     if (e.button === 2){ // delete vertex
@@ -500,7 +502,7 @@ document.getElementById('exGo').addEventListener('click', async () => {
 let stageLeft = stage.getBoundingClientRect().left;
 new ResizeObserver(() => { const r = stage.getBoundingClientRect(); const dl = stageLeft == null ? 0 : r.left - stageLeft; stageLeft = r.left;
   resize(); if (dl){ vs.ox -= dl; draw(); } else if (autoFit) fit(); }).observe(stage);
-setKind('mountain'); setTool('select'); updateUndo(); initLibraryUI();
+setKind('mountain'); setTool('select'); updateUndo(); initLibraryUI(); initAI();
 resize(); fit(); renderSide(); scheduleRender(0);
 if (document.fonts){ Promise.all(FONTS.map(([f]) => document.fonts.load(`36px "${f}"`).catch(() => {}))).then(() => draw()); }
 initCaps();

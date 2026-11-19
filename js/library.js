@@ -29,7 +29,7 @@ function fmtDate(t){ try { return new Date(t).toLocaleString('uk-UA', {day: '2-d
 // ================= автозбереження поточної мапи =================
 let saveTimer = null;
 function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveCurrent, 500); }
-function saveCurrent(){ clearTimeout(saveTimer); saveTimer = null; if (currentMapId && libPut(currentMapId, data)) setStatus('Збережено в браузері'); }
+function saveCurrent(){ if (typeof aiPreview !== 'undefined' && aiPreview) return; clearTimeout(saveTimer); saveTimer = null; if (currentMapId && libPut(currentMapId, data)) setStatus('Збережено в браузері'); }
 function libThumb(img){ if (!currentMapId || !img) return; const tw = 240, th = Math.max(1, Math.round(tw * img.height / img.width));
   const c = layer(tw, th); c.getContext('2d').drawImage(img, 0, 0, tw, th); try { lsSet(thumbKey(currentMapId), c.toDataURL('image/jpeg', .72)); } catch (e) {} }
 function updateTitle(){ const n = mapName(data); document.getElementById('mapTitleBtn').textContent = n; document.title = n + ' — Редактор мап'; }
