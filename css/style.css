@@ -29,7 +29,11 @@ button,select,input{font:inherit;color:inherit}
 .side{flex:0 0 310px;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;overflow-x:hidden;padding:14px 16px}
 .side input{min-width:0}
 /* ліва панель опцій активного інструмента (що малювати, вид кривої, штамп) */
-.opts{flex:0 0 190px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:14px 10px}
+.opts{flex:0 0 270px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;overflow-x:hidden;padding:14px 12px}
+.opts input{min-width:0}
+#toolOpts[hidden],.objpanel[hidden]{display:none}
+#toolOpts:not([hidden]) + .objpanel{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.objpanel h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 8px;font-weight:600}
 .opts[hidden],.optlist[hidden]{display:none}
 .opts h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px 4px;font-weight:600}
 .optlist{display:flex;flex-direction:column;gap:2px}
@@ -41,7 +45,7 @@ button,select,input{font:inherit;color:inherit}
   .main{flex-direction:column}
   .stage{min-height:220px}
   .side{flex:0 0 auto;max-height:40%;border-left:0;border-top:1px solid var(--line)}
-  .opts{flex:0 0 auto;border-right:0;border-bottom:1px solid var(--line);padding:8px 10px;max-height:30%}
+  .opts{flex:0 0 auto;border-right:0;border-bottom:1px solid var(--line);padding:8px 10px;max-height:38%}
   .opts h2{display:none}
   .optlist{flex-direction:row;flex-wrap:wrap}
 }
@@ -54,7 +58,9 @@ button,select,input{font:inherit;color:inherit}
 .side h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 8px;font-weight:600}
 .side h2:first-child{margin-top:0}
 .row{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
-.row label{font-size:13px;color:var(--muted);display:flex;justify-content:space-between}
+.row label{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.row input.num{width:72px;flex:0 0 72px;min-height:26px;padding:2px 6px;text-align:right;background:var(--panel2);border:1px solid var(--line);border-radius:5px;color:var(--text);font-size:13px}
+.row input.num:focus{outline:none;border-color:var(--accent)}
 .row label output{color:var(--text)}
 input[type=range]{width:100%;accent-color:var(--accent);height:28px}
 input[type=number],select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-height:36px;width:100%}

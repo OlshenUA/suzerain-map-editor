@@ -112,8 +112,12 @@ for (const b of document.querySelectorAll('#kinds [data-kind], #curveBar [data-c
   sb.addEventListener('click', e => { const b = e.target.closest('[data-stamp]'); if (!b) return; newStamp = b.dataset.stamp; for (const c of sb.children) c.setAttribute('aria-pressed', String(c.dataset.stamp === newStamp)); }); })();
 const toolsEl = document.getElementById('tools'), kindsEl = document.getElementById('kinds');
 const OPTS_TITLE = {poly: 'Що малювати', ellipse: 'Що малювати', curve: 'Вид кривої', stamp: 'Штамп'};
+// Ліва панель: опції активного інструмента та/або налаштування вибраного об'єкта.
+function updateLeftPanel(){ const opts = document.getElementById('opts'), to = document.getElementById('toolOpts'); const hasTool = !!OPTS_TITLE[tool], hasObj = !!(selected || selObj);
+  to.hidden = !hasTool; objPanel.hidden = !hasObj; opts.hidden = !hasTool && !hasObj;
+  if (hasTool){ document.getElementById('optsTitle').textContent = OPTS_TITLE[tool]; for (const l of opts.querySelectorAll('.optlist')) l.hidden = !l.dataset.for.split(' ').includes(tool); } }
 function setTool(t){ tool = t; drawing = null; for (const b of toolsEl.children) b.setAttribute('aria-pressed', String(b.dataset.tool === t));
-  const opts = document.getElementById('opts'); opts.hidden = !OPTS_TITLE[t]; if (OPTS_TITLE[t]){ document.getElementById('optsTitle').textContent = OPTS_TITLE[t]; for (const l of opts.querySelectorAll('.optlist')) l.hidden = !l.dataset.for.split(' ').includes(t); }
+  updateLeftPanel();
   view.style.cursor = t === 'select' ? 'default' : 'crosshair'; draw(); }
 function setKind(k){ newKind = k; for (const b of kindsEl.children) b.setAttribute('aria-pressed', String(b.dataset.kind === k)); }
 toolsEl.addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
@@ -267,11 +271,7 @@ function renderMapSettings(){ const mapBody = document.getElementById('mapBody')
   const nGen = data.shapes.filter(x => x.gen === 'wet').length;
   if (nGen) h += `<div class="btns" style="margin-bottom:8px"><button class="btn solid" id="wetClear">Прибрати стару автогенерацію (${nGen})</button></div>`;
   mapBody.innerHTML = h;
-  mapBody.querySelectorAll('input[type=range]').forEach(inp => {
-    inp.addEventListener('pointerdown', () => pushUndo());
-    inp.addEventListener('keydown', () => { if (!inp._u){ pushUndo(); inp._u = 1; } });
-    inp.addEventListener('input', () => { st[inp.dataset.key] = +inp.value; document.getElementById(inp.id + '_o').textContent = inp.value; changed(); });
-  });
+  bindSliders(mapBody, st, () => changed());
   const q = id => document.getElementById(id);
   q('mapName').addEventListener('change', e => renameMap(currentMapId, e.target.value));
   q('mapName').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
@@ -311,10 +311,20 @@ window.addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = fals
 function deleteSelected(){ if (selObj){ pushUndo(); const o = selObj.o; data.stamps = data.stamps.filter(x => x !== o); data.texts = data.texts.filter(x => x !== o); selObj = null; changed(); renderSide(); return; } if (!selected) return; vmode = null; ghost = null; pushUndo(); data.shapes = data.shapes.filter(s => s !== selected); selected = null; activeVertex = -1; changed(); renderSide(); }
 
 // ================= side panel =================
-const side = document.getElementById('side');
+const sidePanel = document.getElementById('side'), objPanel = document.getElementById('objPanel');
+// Повзунок із полем для числа: тягнути або ввести значення вручну (Enter / вихід з поля застосовує).
 function slider(label, key, min, max, step, obj, onSet){ const id = 'f_' + key; const v = obj[key];
-  return `<div class="row"><label for="${id}">${label} <output id="${id}_o">${v}</output></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${v}" data-key="${key}"></div>`; }
-function renderDecorSide(){
+  return `<div class="row"><label for="${id}">${label} <input type="text" inputmode="decimal" class="num" id="${id}_o" data-min="${min}" data-max="${max}" value="${v}" aria-label="${label}, число"></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${v}" data-key="${key}"></div>`; }
+// Прив'язати всі повзунки в root до об'єкта obj; after(v) — що зробити після зміни (зазвичай changed()).
+function bindSliders(root, obj, after){
+  root.querySelectorAll('input[type=range]').forEach(inp => { const box = document.getElementById(inp.id + '_o'); const key = inp.dataset.key;
+    inp.addEventListener('pointerdown', () => pushUndo());
+    inp.addEventListener('keydown', () => { if (!inp._u){ pushUndo(); inp._u = 1; } });
+    inp.addEventListener('input', () => { obj[key] = +inp.value; if (box) box.value = inp.value; after(+inp.value); });
+    if (box){ box.addEventListener('keydown', e => { if (e.key === 'Enter') box.blur(); });
+      box.addEventListener('change', () => { let v = parseFloat(String(box.value).replace(',', '.')); if (!isFinite(v)){ box.value = obj[key]; return; }
+        v = Math.min(+inp.max, Math.max(+inp.min, v)); box.value = v; if (v === obj[key]) return; pushUndo(); obj[key] = v; inp.value = v; after(v); }); } }); }
+function renderDecorSide(side){
   const so = selObj, o = so.o; let h = '';
   if (so.type === 'stamp'){
     h += `<div class="kindtag"><span class="dot" style="background:#d39a4a"></span>Штамп · ${STAMPS[o.type] ? STAMPS[o.type].name : o.type}</div>`;
@@ -334,7 +344,7 @@ function renderDecorSide(){
   }
   h += `<div class="btns" style="margin-top:8px"><button class="btn solid" id="oDup">Дублювати</button><button class="btn solid" id="oDel">Видалити</button></div>`;
   side.innerHTML = h; const q = id => document.getElementById(id);
-  side.querySelectorAll('input[type=range]').forEach(inp => { inp.addEventListener('pointerdown', () => pushUndo()); inp.addEventListener('input', () => { o[inp.dataset.key] = +inp.value; document.getElementById(inp.id + '_o').textContent = inp.value; changed(so.type === 'text' && !o.bg); }); });
+  bindSliders(side, o, () => changed(so.type === 'text' && !o.bg));
   const once = (el, ev, fn) => { let u = false; el.addEventListener('focus', () => { u = false; }); el.addEventListener(ev, () => { if (!u){ pushUndo(); u = true; } fn(); }); };
   if (q('dType')) q('dType').addEventListener('change', e => { pushUndo(); o.type = e.target.value; o.size = STAMPS[o.type].size; changed(); renderSide(); });
   if (q('dHalo')) q('dHalo').addEventListener('change', e => { pushUndo(); o.halo = e.target.checked; changed(true); });
@@ -349,8 +359,14 @@ function renderDecorSide(){
   q('oDup').addEventListener('click', () => { pushUndo(); const c = JSON.parse(JSON.stringify(o)); c.id = 'd' + (uid++); c.x += 40; c.y += 40; (so.type === 'text' ? data.texts : data.stamps).push(c); selObj = {type: so.type, o: c}; changed(); renderSide(); });
   q('oDel').addEventListener('click', deleteSelected);
 }
+// Права панель — завжди параметри мапи й контури; налаштування вибраної фігури, штампа чи тексту — у лівій панелі.
 function renderSide(){
-  if (selObj){ renderDecorSide(); return; }
+  const s0 = selected, o0 = selObj;
+  selected = null; selObj = null; try { renderPanel(sidePanel); } finally { selected = s0; selObj = o0; }
+  if (s0 || o0) renderPanel(objPanel); else objPanel.innerHTML = '';
+  updateLeftPanel(); }
+function renderPanel(side){
+  if (selObj){ renderDecorSide(side); return; }
   let h = '';
   if (selected){ const s = selected; h += `<div class="kindtag"><span class="dot" style="background:${KIND_COLOR[s.kind]}"></span>${KIND_NAME[s.kind]}${s.shape === 'ellipse' ? ' · овал' : s.shape === 'poly' ? ' · полігон' : ''}</div>`;
     if (s.shape === 'line') h += `<label class="check"><input type="checkbox" id="lineClear" ${s.clear !== false ? 'checked' : ''}> Прибирати дерева, гори й сніг уздовж</label>`;
@@ -394,12 +410,7 @@ function renderSide(){
     h += `<div class="vis">` + ['land','lake','mountain','forest','marsh','river','road','rail','path','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('') + `</div>`;
   }
   side.innerHTML = h;
-  side.querySelectorAll('input[type=range]').forEach(inp => {
-    const obj = selected || data.settings;
-    inp.addEventListener('pointerdown', () => pushUndo(), {once: false});
-    inp.addEventListener('keydown', () => { if (!inp._u){ pushUndo(); inp._u = 1; } });
-    inp.addEventListener('input', () => { obj[inp.dataset.key] = +inp.value; document.getElementById(inp.id + '_o').textContent = inp.value; if (selected && selected.kind === 'river') lastRiverWidth = +inp.value; changed(); });
-  });
+  if (selected){ const sel = selected; bindSliders(side, sel, v => { if (sel.kind === 'river') lastRiverWidth = v; changed(); }); }
   const q = id => document.getElementById(id);
   if (q('kindSel')) q('kindSel').addEventListener('change', e => { pushUndo(); selected.kind = e.target.value; Object.assign(selected, Object.assign(defaultsFor(selected.kind), selected)); changed(); renderSide(); });
   if (q('toPoly')) q('toPoly').addEventListener('click', () => { pushUndo(); const p = ellipsePts(selected, 16).map(p => [Math.round(p[0]), Math.round(p[1])]); delete selected.cx; delete selected.cy; delete selected.rx; delete selected.ry; delete selected.rot; selected.shape = 'poly'; selected.pts = p; changed(); renderSide(); });
@@ -470,7 +481,10 @@ document.getElementById('exGo').addEventListener('click', async () => {
   busy.style.display = 'none'; busy.textContent = 'Перемальовую…'; });
 
 // ================= boot =================
-new ResizeObserver(() => { resize(); if (autoFit) fit(); }).observe(stage);
+// Коли ліва панель з'являється чи ховається, сцена зсувається — компенсуємо, щоб мапа не стрибала.
+let stageLeft = stage.getBoundingClientRect().left;
+new ResizeObserver(() => { const r = stage.getBoundingClientRect(); const dl = stageLeft == null ? 0 : r.left - stageLeft; stageLeft = r.left;
+  resize(); if (dl){ vs.ox -= dl; draw(); } else if (autoFit) fit(); }).observe(stage);
 setKind('mountain'); setTool('select'); updateUndo(); initLibraryUI();
 resize(); fit(); renderSide(); scheduleRender(0);
 if (document.fonts){ Promise.all(FONTS.map(([f]) => document.fonts.load(`36px "${f}"`).catch(() => {}))).then(() => draw()); }
