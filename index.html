@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Kurale&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ruslan+Display&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=9">
+<link rel="stylesheet" href="css/style.css?v=10">
 </head>
 <body>
 <div class="app">
@@ -44,7 +44,6 @@
     <div class="spacer"></div>
     <span class="status" id="status">Завантаження…</span>
     <button class="btn solid" id="libBtn" title="Мої мапи: нова, відкрити, перейменувати, копія">Мапи</button>
-    <button class="btn solid" id="mapBtn" title="Назва, межі, seed, розсип дерев, сніг">Параметри</button>
     <button class="btn solid" id="fit">Вся мапа</button>
     <button class="btn solid" id="jsonBtn">JSON</button>
     <button class="btn solid" id="exportBtn">Експорт PNG</button>
@@ -95,15 +94,6 @@
     <div class="btns"><span class="spacer"></span><button class="btn solid" id="confirmNo">Скасувати</button><button class="btn primary" id="confirmYes">Так</button></div>
   </div>
 </div>
-<div class="modal" id="mapModal" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
-  <div class="card" style="max-width:420px">
-    <h3 id="mapTitle">Параметри мапи</h3>
-    <div class="row"><label for="mapName">Назва</label><input type="text" id="mapName" class="txt" maxlength="120"></div>
-    <div class="row"><label>Розмір <output id="mapSizeInfo"></output></label><div class="btns"><button class="btn solid" id="boundsBtn">Змінити межі…</button></div></div>
-    <div id="mapBody"></div>
-    <div class="btns" style="margin-top:10px"><span class="spacer"></span><button class="btn primary" id="mapClose">Готово</button></div>
-  </div>
-</div>
 <div class="modal" id="libModal" role="dialog" aria-modal="true" aria-labelledby="libTitle">
   <div class="card wide">
     <div class="btns" style="align-items:center;margin-bottom:10px"><h3 id="libTitle" style="margin:0">Мої мапи</h3><span class="spacer"></span><button class="btn solid" id="libImport" title="Ctrl+O">Відкрити файл…</button><button class="btn primary" id="libNew">Нова мапа…</button></div>
@@ -120,7 +110,7 @@
     <div class="row"><label for="nmSize">Розмір, px</label><select id="nmSize"></select>
       <div class="btns" id="nmCustom" style="flex-wrap:nowrap;align-items:center;margin-top:6px"><input type="number" id="nmW" min="400" max="8000" step="10" aria-label="Ширина"><span>×</span><input type="number" id="nmH" min="400" max="8000" step="10" aria-label="Висота"></div></div>
     <p class="help" id="nmHint" style="padding:0;margin:0 0 8px"></p>
-    <p class="help" style="padding:0;margin:0 0 12px">Межі можна змінити будь-коли: «Параметри» → «Змінити межі…».</p>
+    <p class="help" style="padding:0;margin:0 0 12px">Межі можна змінити будь-коли: бічна панель → «Змінити межі…».</p>
     <div class="btns"><span class="spacer"></span><button class="btn solid" id="nmCancel">Скасувати</button><button class="btn primary" id="nmCreate">Створити</button></div>
   </div>
 </div>
@@ -171,7 +161,7 @@
     <ul class="help">
       <li>«Мапи» або клік по назві зліва вгорі — список ваших мап: відкрити, перейменувати, копія, видалити, «Як шаблон».</li>
       <li>«Нова мапа…» — назва, шаблон (чистий аркуш, острів, узбережжя, ваші шаблони…) і розмір.</li>
-      <li>«Параметри» → «Змінити межі…» — розширити чи обрізати мапу з будь-якого боку.</li>
+      <li>«Змінити межі…» у бічній панелі (коли нічого не вибрано) — розширити чи обрізати мапу з будь-якого боку.</li>
       <li>Кожна зміна автоматично зберігається в браузері. «Зберегти» (<kbd>Ctrl+S</kbd>) — копія в JSON-файл; <kbd>Ctrl+O</kbd> — відкрити файл як нову мапу.</li>
     </ul>
     <div class="btns" style="margin-top:14px"><span class="spacer"></span><button class="btn primary" id="helpClose">Зрозуміло</button></div>
@@ -180,12 +170,12 @@
 <div class="toast" id="toast" role="status"></div>
 
 
-<script src="js/default-map.js?v=9"></script>
-<script src="js/core.js?v=9"></script>
-<script src="js/render.js?v=9"></script>
-<script src="js/generators.js?v=9"></script>
-<script src="js/templates.js?v=9"></script>
-<script src="js/library.js?v=9"></script>
-<script src="js/ui.js?v=9"></script>
+<script src="js/default-map.js?v=10"></script>
+<script src="js/core.js?v=10"></script>
+<script src="js/render.js?v=10"></script>
+<script src="js/generators.js?v=10"></script>
+<script src="js/templates.js?v=10"></script>
+<script src="js/library.js?v=10"></script>
+<script src="js/ui.js?v=10"></script>
 </body>
 </html>

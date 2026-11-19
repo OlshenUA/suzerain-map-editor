@@ -251,11 +251,12 @@ function finishPoly(){ if (!drawing) return; const pts = drawing.pts; const min 
   drawing = null; snapMark = null; setTool('select'); renderSide(); draw(); }
 view.addEventListener('wheel', e => { e.preventDefault(); const [sx, sy] = pos(e); const f = Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)); const ns = Math.min(4, Math.max(.08, vs.scale * f));
   autoFit = false; const [wx, wy] = toWorld(sx, sy); vs.scale = ns; vs.ox = sx - wx*ns; vs.oy = sy - wy*ns; draw(); }, {passive: false});
-// ================= map settings dialog =================
-const mapM = document.getElementById('mapModal'), mapBody = document.getElementById('mapBody');
-function renderMapSettings(){
+// ================= map settings (бічна панель, коли нічого не вибрано) =================
+function renderMapSettings(){ const mapBody = document.getElementById('mapBody'); if (!mapBody) return;
   const st = data.settings || (data.settings = {}); if (st.wetStreams == null) st.wetStreams = 1; if (st.wetPonds == null) st.wetPonds = 1;
-  let h = `<div class="row"><label for="seedIn">Варіант розкладки (seed)</label><div class="btns" style="flex-wrap:nowrap"><input type="number" id="seedIn" value="${data.seed}"><button class="btn solid" id="seedNew">Інший</button></div></div>`;
+  let h = `<div class="row"><label for="mapName">Назва</label><input type="text" id="mapName" class="txt" maxlength="120" value="${esc(mapName(data))}"></div>`;
+  h += `<div class="row"><label>Розмір <output>${W} × ${H}</output></label><div class="btns"><button class="btn solid" id="boundsBtn">Змінити межі…</button></div></div>`;
+  h += `<div class="row"><label for="seedIn">Варіант розкладки (seed)</label><div class="btns" style="flex-wrap:nowrap"><input type="number" id="seedIn" value="${data.seed}"><button class="btn solid" id="seedNew">Інший</button></div></div>`;
   h += slider('Розсип окремих дерев', 'scatter', 0, 3, .05, st) + slider('Снігові позначки', 'snow', 0, 2, .05, st);
   const nGen = data.shapes.filter(x => x.gen === 'wet').length;
   if (nGen) h += `<div class="btns" style="margin-bottom:8px"><button class="btn solid" id="wetClear">Прибрати стару автогенерацію (${nGen})</button></div>`;
@@ -266,14 +267,13 @@ function renderMapSettings(){
     inp.addEventListener('input', () => { st[inp.dataset.key] = +inp.value; document.getElementById(inp.id + '_o').textContent = inp.value; changed(); });
   });
   const q = id => document.getElementById(id);
+  q('mapName').addEventListener('change', e => renameMap(currentMapId, e.target.value));
+  q('mapName').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+  q('boundsBtn').addEventListener('click', openBounds);
   q('seedIn').addEventListener('change', e => { pushUndo(); data.seed = (+e.target.value) | 0; changed(); });
   q('seedNew').addEventListener('click', () => { pushUndo(); data.seed = (Math.random()*100000) | 0; changed(); renderMapSettings(); });
-  if (q('wetClear')) q('wetClear').addEventListener('click', () => { pushUndo(); data.shapes = data.shapes.filter(x => x.gen !== 'wet'); if (selected && selected.gen === 'wet') selected = null; changed(); renderSide(); renderMapSettings(); });
+  if (q('wetClear')) q('wetClear').addEventListener('click', () => { pushUndo(); data.shapes = data.shapes.filter(x => x.gen !== 'wet'); if (selected && selected.gen === 'wet') selected = null; changed(); renderSide(); });
 }
-document.getElementById('mapBtn').addEventListener('click', () => { renderMapSettings(); document.getElementById('mapName').value = mapName(data); document.getElementById('mapSizeInfo').textContent = W + ' × ' + H; mapM.classList.add('open'); });
-document.getElementById('mapClose').addEventListener('click', () => mapM.classList.remove('open'));
-mapM.addEventListener('click', e => { if (e.target === mapM) mapM.classList.remove('open'); });
-window.addEventListener('keydown', e => { if (e.key === 'Escape' && mapM.classList.contains('open')){ e.stopImmediatePropagation(); mapM.classList.remove('open'); } }, true);
 
 // ================= help dialog =================
 const helpM = document.getElementById('helpModal');
@@ -384,7 +384,7 @@ function renderSide(){
       if (activeVertex >= 0) h += `<div class="btns" style="margin-top:6px"><button class="btn solid" id="vDelActive">Видалити вибрану точку</button></div>`;
     } else h += `<p class="help" style="padding:0;margin-top:10px">Щоб додавати чи видаляти точки, спершу перетворіть овал на полігон.</p>`;
   } else {
-    h += `<h2>Контури й вибір</h2><label class="check"><input type="checkbox" id="outChk" ${showOutlines ? 'checked' : ''}> Показувати контури</label>`;
+    h += `<h2>Мапа</h2><div id="mapBody"></div><h2>Контури й вибір</h2><label class="check"><input type="checkbox" id="outChk" ${showOutlines ? 'checked' : ''}> Показувати контури</label>`;
     h += `<div class="vis">` + ['land','lake','mountain','forest','marsh','river','road','rail','path','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('') + `</div>`;
   }
   side.innerHTML = h;
@@ -419,6 +419,7 @@ function renderSide(){
   side.querySelectorAll('[data-clr]').forEach(b => b.addEventListener('click', () => { pushUndo(); const rs = selected; clearGen(rs, b.dataset.clr); selected = rs; changed(); renderSide(); }));
   if (q('outChk')) q('outChk').addEventListener('change', e => { showOutlines = e.target.checked; if (!showOutlines){ selected = null; activeVertex = -1; vmode = null; } draw(); });
   side.querySelectorAll('[data-vis]').forEach(c => c.addEventListener('change', () => { const k = c.dataset.vis; visibleKinds[k] = c.checked; if (!c.checked){ if (selected && selected.kind === k){ selected = null; activeVertex = -1; vmode = null; } if (selObj && selObj.type === k){ selObj = null; } } draw(); }));
+  renderMapSettings(); // після прив'язки повзунків панелі, щоб не прив'язати їх двічі
 }
 
 // ================= top buttons =================

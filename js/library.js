@@ -100,7 +100,7 @@ function renderLibrary(){
 }
 function mapDataById(id){ return id === currentMapId ? JSON.parse(snapshot()) : libGet(id); }
 function renameMap(id, name){ name = String(name || '').trim().slice(0, 120); if (!name) return;
-  if (id === currentMapId){ data.name = name; fileName = fileSafe(name) + '.json'; saveCurrent(); updateTitle(); }
+  if (id === currentMapId){ data.name = name; fileName = fileSafe(name) + '.json'; saveCurrent(); updateTitle(); if (!selected && !selObj) renderSide(); }
   else { const d = libGet(id); if (!d) return; d.name = name; libPut(id, d); }
   renderLibrary(); }
 function startRename(item){ const id = item.dataset.id, e = libList().find(x => x.id === id); if (!e) return;
@@ -167,7 +167,7 @@ function createFromDialog(){
 
 // ================= межі мапи =================
 let boundsPreview = null; // {l, t, r, b} — скільки додати (+) чи обрізати (−) з кожного боку
-function openBounds(){ closeModal('mapModal'); boundsPreview = {l: 0, t: 0, r: 0, b: 0}; for (const k of ['l', 't', 'r', 'b']) document.getElementById('bd_' + k).value = 0;
+function openBounds(){ boundsPreview = {l: 0, t: 0, r: 0, b: 0}; for (const k of ['l', 't', 'r', 'b']) document.getElementById('bd_' + k).value = 0;
   boundsInfo(); openModal('boundsModal'); autoFit = false; zoomOutForBounds(); }
 function zoomOutForBounds(){ const r = stage.getBoundingClientRect(); const s = Math.min(r.width / (W*1.3), r.height / (H*1.3)); vs.scale = s; vs.ox = (r.width - W*s)/2; vs.oy = (r.height - H*s)/2; draw(); }
 function readBounds(){ const v = k => Math.round(+document.getElementById('bd_' + k).value || 0); boundsPreview = {l: v('l'), t: v('t'), r: v('r'), b: v('b')}; boundsInfo(); draw(); }
@@ -210,13 +210,11 @@ function initLibraryUI(){
   $('nmCancel').addEventListener('click', () => closeModal('newModal'));
   $('nmCreate').addEventListener('click', createFromDialog);
   $('nmName').addEventListener('keydown', e => { if (e.key === 'Enter') createFromDialog(); });
-  $('boundsBtn').addEventListener('click', openBounds);
   for (const k of ['l', 't', 'r', 'b']) $('bd_' + k).addEventListener('input', readBounds);
   $('boundsModal').addEventListener('click', e => { const q = e.target.closest('[data-bq]'); if (q){ const [k, d] = q.dataset.bq.split(':'); boundsQuick(k, +d); } });
   $('bdReset').addEventListener('click', () => { for (const k of ['l', 't', 'r', 'b']) $('bd_' + k).value = 0; readBounds(); });
   $('bdCancel').addEventListener('click', closeBounds);
   $('bdApply').addEventListener('click', applyBounds);
-  $('mapName').addEventListener('change', e => renameMap(currentMapId, e.target.value));
   for (const id of ['libModal', 'newModal']) $(id).addEventListener('click', e => { if (e.target.id === id) closeModal(id); });
   window.addEventListener('keydown', e => { if (e.key !== 'Escape') return;
     if (isOpen('confirmModal')) return;
