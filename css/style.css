@@ -62,4 +62,41 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padd
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;max-width:560px;width:100%}
 .card h3{margin:0 0 8px;font-size:16px}
 .card p{color:var(--muted);margin:0 0 12px}
+#confirmModal{z-index:30}
+.maptitle{background:none;border:0;padding:4px 6px;margin:0 -6px;border-radius:6px;font:inherit;color:inherit;cursor:pointer;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.maptitle:hover{background:#3a332b}
+.maptitle::after{content:" ▾";color:var(--muted);font-size:11px}
+.btn.sm{min-height:28px;padding:3px 9px;font-size:13px}
+.btn.danger:hover{background:#5a2a22;border-color:#8a3a2e}
+.txt{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-height:36px;width:100%}
+/* бібліотека мап */
+.liblist{display:flex;flex-direction:column;gap:8px}
+.libitem{display:flex;gap:12px;align-items:flex-start;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+.libitem.cur{border-color:var(--accent)}
+.libthumb{flex:0 0 132px;height:84px;padding:0;border:1px solid var(--line);border-radius:6px;background:#e2cb94;cursor:pointer;overflow:hidden}
+.libthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.libinfo{flex:1;min-width:0}
+.libname{font-weight:600;font-size:15px;margin-bottom:2px}
+.linklike{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left;overflow-wrap:anywhere}
+.linklike:hover{color:var(--accent)}
+.libmeta{font-size:12px;color:var(--muted);margin-bottom:6px}
+.libacts{gap:4px}
+@media (max-width:520px){.libthumb{flex-basis:84px;height:60px}}
+/* шаблони */
+.tplgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.tplcard-wrap{position:relative}
+.tplcard{width:100%;height:100%;text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel2);cursor:pointer}
+.tplcard span{font-size:12px;color:var(--muted)}
+.tplcard[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tplcard[aria-pressed="true"] b{color:var(--accent)}
+.tpldel{position:absolute;top:2px;right:2px;min-height:22px;padding:0 6px}
+/* межі мапи: вікно збоку, мапа лишається доступною */
+.modal.dock{background:transparent;pointer-events:none;align-items:flex-start;justify-content:flex-start}
+.modal.dock .card{pointer-events:auto;margin-top:64px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.bgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:center}
+.bcell{display:flex;flex-direction:column;gap:3px}
+.bcell label{font-size:12px;color:var(--muted)}
+.bcell input{padding:5px 6px;min-height:32px}
+.bq{display:flex;gap:2px}.bq .btn{flex:1;padding:2px 0;background:var(--panel2)}
+.bmid{text-align:center;color:var(--muted);font-size:12px;border:1px dashed var(--line);border-radius:6px;padding:16px 0}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#2f2a24;border:1px solid var(--line);padding:8px 14px;border-radius:8px;display:none;z-index:20}

@@ -32,7 +32,9 @@ function strokeRiver(ctx, r, add){
     const t = (k + 1) / segs; const f = taper ? (.45 + .55*Math.min(1, t/.45)) : 1;
     ctx.beginPath(); ctx.moveTo(pts[a][0], pts[a][1]); for (let i = a + 1; i < b; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.lineWidth = w*f + add; ctx.stroke(); } }
 // land lookup field at 1/4 resolution with distance-to-coast
-const FS = 4; const FW = Math.ceil(W / FS), FH = Math.ceil(H / FS);
+const FS = 4; let FW = Math.ceil(W / FS), FH = Math.ceil(H / FS);
+// Мапи можуть мати різний розмір: після заміни data синхронізуємо W/H, сітки й текстуру паперу.
+function applyMapSize(){ data.W = Math.round(data.W || 3200); data.H = Math.round(data.H || 1513); if (W === data.W && H === data.H) return; W = data.W; H = data.H; FW = Math.ceil(W / FS); FH = Math.ceil(H / FS); paperCanvas = null; }
 function buildField(geo){
   const c = layer(FW, FH); const g = c.getContext('2d'); g.scale(1/FS, 1/FS);
   g.fillStyle = '#fff'; for (const l of geo.lands) g.fill(pathOf(l.rough, true));

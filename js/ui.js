@@ -22,6 +22,7 @@ function draw(){
   if (showOutlines) for (const s of data.shapes){ if (!visibleKinds[s.kind]) continue; if (s === selected) continue; outline(g, s, px, false); }
   if (selected){ outline(g, selected, px, true); drawGhost(g, px); }
   drawDecor(g);
+  drawBoundsPreview(g, px);
   if (selObj){ const b = selObj.type === 'text' ? [selObj.o.x, selObj.o.y, selObj.o.x + selObj.o.w, selObj.o.y + selObj.o.h] : stampBox(selObj.o);
     g.setLineDash([6*px, 4*px]); g.strokeStyle = '#d39a4a'; g.lineWidth = 1.8*px; g.strokeRect(b[0], b[1], b[2]-b[0], b[3]-b[1]); g.setLineDash([]);
     const hdl = decorHandle(selObj); handle(g, hdl[0], hdl[1], px, true); }
@@ -59,20 +60,18 @@ function ellipseHandles(s){ const c = Math.cos(s.rot||0), sn = Math.sin(s.rot||0
 // ================= rendering scheduler =================
 let renderTimer = null, renderVersion = 0;
 const busy = document.getElementById('busy');
-function scheduleRender(delay){ clearTimeout(renderTimer); busy.style.display = 'block'; renderTimer = setTimeout(() => { requestAnimationFrame(() => { try { mapImg = renderMap(1); } catch (e) { console.error(e); } busy.style.display = 'none'; draw(); }); }, delay ?? 300); }
+function scheduleRender(delay){ clearTimeout(renderTimer); busy.style.display = 'block'; renderTimer = setTimeout(() => { requestAnimationFrame(() => { try { mapImg = renderMap(1); libThumb(mapImg); } catch (e) { console.error(e); } busy.style.display = 'none'; draw(); }); }, delay ?? 300); }
 
 // ================= history & persistence =================
 let undoStack = [], redoStack = [];
 function snapshot(){ return JSON.stringify(data); }
 function pushUndo(){ undoStack.push(snapshot()); if (undoStack.length > 80) undoStack.shift(); redoStack = []; updateUndo(); }
 function updateUndo(){ document.getElementById('undo').disabled = !undoStack.length; document.getElementById('redo').disabled = !redoStack.length; }
-function restore(json){ const selId = selected && selected.id; selObj = null; data = JSON.parse(json); ensureIds(); selected = data.shapes.find(s => s.id === selId) || null; activeVertex = -1; changed(); renderSide(); }
+function restore(json){ const selId = selected && selected.id; selObj = null; const nm = data.name; data = JSON.parse(json); data.name = nm; ensureIds(); selected = data.shapes.find(s => s.id === selId) || null; activeVertex = -1; changed(); renderSide(); }
 function undo(){ if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); updateUndo(); }
 function redo(){ if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); updateUndo(); }
-let dirty = false; let draftTimer = null;
 function setStatus(t){ const el = document.getElementById('status'); el.textContent = t; el.title = t; }
-function changed(noRender){ dirty = true; setStatus('Є незбережені зміни'); if (!noRender) scheduleRender(); draw();
-  clearTimeout(draftTimer); draftTimer = setTimeout(() => { try { localStorage.setItem(LS_KEY, JSON.stringify({at: Date.now(), json: snapshot()})); } catch (e) {} }, 600); }
+function changed(noRender){ setStatus('Зберігаю…'); if (!noRender) scheduleRender(); draw(); scheduleSave(); }
 
 // ---- local file persistence (standalone build) ----
 let fileHandle = null, fileName = 'kraitren-north.json';
@@ -82,7 +81,7 @@ const dl = { async save({filename, data}){ const ext = filename.split('.').pop()
   if (FS_API){ try { const h = await window.showSaveFilePicker({suggestedName: filename, types: [{description: ext.toUpperCase(), accept: {[ext === 'png' ? 'image/png' : 'application/json']: ['.' + ext]}}]});
       const w = await h.createWritable(); await w.write(data); await w.close(); return {status: 'saved'}; } catch (e) { if (e && e.name === 'AbortError') throw {code: 'declined'}; } }
   const blob = data instanceof Blob ? data : new Blob([data]); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); return {status: 'saved'}; } };
-function markSaved(){ dirty = false; setStatus('Збережено: ' + fileName); try { localStorage.setItem(LS_KEY, JSON.stringify({at: Date.now(), json: snapshot(), file: fileName, saved: true})); } catch (e) {} }
+function markSaved(){ setStatus('Збережено у файл: ' + fileName); }
 async function saveFile(as){ const json = JSON.stringify(data);
   try {
     if (FS_API){ if (!fileHandle || as){ fileHandle = await window.showSaveFilePicker({suggestedName: fileName, types: [{description: 'Мапа (JSON)', accept: {'application/json': ['.json']}}]}); fileName = fileHandle.name; }
@@ -91,22 +90,16 @@ async function saveFile(as){ const json = JSON.stringify(data);
   } catch (e) { if (e && (e.name === 'AbortError' || e.code === 'declined')) return; console.error(e); toast('Не вдалося зберегти: ' + (e && e.message || e)); }
 }
 async function openFile(){
-  if (dirty && !(await ask('Є незбережені зміни. Відкрити інший файл усе одно?'))) return;
   try {
     if ('showOpenFilePicker' in window){ const [h] = await window.showOpenFilePicker({types: [{description: 'Мапа (JSON)', accept: {'application/json': ['.json']}}]}); const f = await h.getFile(); loadMapText(await f.text(), f.name); fileHandle = h; return; }
     const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json'; inp.onchange = async () => { const f = inp.files[0]; if (f){ loadMapText(await f.text(), f.name); fileHandle = null; } }; inp.click();
   } catch (e) { if (e && e.name === 'AbortError') return; toast('Не вдалося відкрити: ' + (e && e.message || e)); }
 }
-function loadMapText(txt, name){ try { const d = JSON.parse(txt); if (!d.shapes || !Array.isArray(d.shapes)) throw new Error('у файлі немає shapes'); undoStack = []; redoStack = []; updateUndo();
-  data = d; ensureIds(); selected = null; selObj = null; fileName = name || fileName; scheduleRender(0); renderSide(); draw(); markSaved(); toast('Відкрито ' + fileName); } catch (e) { toast('Це не схоже на файл мапи: ' + e.message); } }
-async function newMap(){ if (dirty && !(await ask('Є незбережені зміни. Почати нову мапу (з початкової)?'))) return; undoStack = []; redoStack = []; updateUndo(); fileHandle = null; fileName = 'nova-mapa.json'; data = JSON.parse(DEFAULT_JSON); ensureIds(); selected = null; selObj = null; scheduleRender(0); renderSide(); changed(); }
-async function initCaps(){
-  let draft = null; try { draft = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch (e) {}
-  if (draft && draft.json){ try { data = JSON.parse(draft.json); ensureIds(); if (draft.file) fileName = draft.file; dirty = !draft.saved; toast(draft.saved ? 'Відкрито останню мапу' : 'Відновлено автозбереження'); } catch (e) {} }
-  setStatus(dirty ? 'Є незбережені зміни' : (draft ? 'Збережено: ' + fileName : 'Нова мапа'));
-  renderSide(); scheduleRender(0);
-}
-window.addEventListener('beforeunload', e => { if (dirty){ e.preventDefault(); e.returnValue = ''; } });
+// Файл .json відкривається як нова мапа в бібліотеці (поточна лишається як є).
+function loadMapText(txt, name){ try { const d = JSON.parse(txt); if (!d.shapes || !Array.isArray(d.shapes)) throw new Error('у файлі немає shapes');
+  if (!d.name) d.name = String(name || 'Мапа з файлу').replace(/.json$/i, ''); if (createMap(d)){ if (name) fileName = name; markSaved(); toast('Відкрито ' + (name || mapName(d))); } } catch (e) { toast('Це не схоже на файл мапи: ' + e.message); } }
+function initCaps(){ initLibrary(); }
+window.addEventListener('beforeunload', () => { if (saveTimer) saveCurrent(); });
 window.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); saveFile(e.shiftKey); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o'){ e.preventDefault(); openFile(); } });
 
 // ================= tools / interaction =================
@@ -277,7 +270,7 @@ function renderMapSettings(){
   q('seedNew').addEventListener('click', () => { pushUndo(); data.seed = (Math.random()*100000) | 0; changed(); renderMapSettings(); });
   if (q('wetClear')) q('wetClear').addEventListener('click', () => { pushUndo(); data.shapes = data.shapes.filter(x => x.gen !== 'wet'); if (selected && selected.gen === 'wet') selected = null; changed(); renderSide(); renderMapSettings(); });
 }
-document.getElementById('mapBtn').addEventListener('click', () => { renderMapSettings(); mapM.classList.add('open'); });
+document.getElementById('mapBtn').addEventListener('click', () => { renderMapSettings(); document.getElementById('mapName').value = mapName(data); document.getElementById('mapSizeInfo').textContent = W + ' × ' + H; mapM.classList.add('open'); });
 document.getElementById('mapClose').addEventListener('click', () => mapM.classList.remove('open'));
 mapM.addEventListener('click', e => { if (e.target === mapM) mapM.classList.remove('open'); });
 window.addEventListener('keydown', e => { if (e.key === 'Escape' && mapM.classList.contains('open')){ e.stopImmediatePropagation(); mapM.classList.remove('open'); } }, true);
@@ -433,8 +426,6 @@ document.getElementById('undo').addEventListener('click', undo);
 document.getElementById('redo').addEventListener('click', redo);
 document.getElementById('fit').addEventListener('click', fit);
 document.getElementById('saveBtn').addEventListener('click', () => saveFile(false));
-document.getElementById('openBtn').addEventListener('click', openFile);
-document.getElementById('newBtn').addEventListener('click', newMap);
 function toast(t){ const el = document.getElementById('toast'); el.textContent = t; el.style.display = 'block'; clearTimeout(el._t); el._t = setTimeout(() => el.style.display = 'none', 3200); }
 function ask(text){ return new Promise(res => { const m = document.getElementById('confirmModal'); document.getElementById('confirmText').textContent = text; m.classList.add('open');
   const done = v => { m.classList.remove('open'); yes.onclick = no.onclick = null; res(v); }; const yes = document.getElementById('confirmYes'), no = document.getElementById('confirmNo'); yes.onclick = () => done(true); no.onclick = () => done(false); yes.focus(); }); }
@@ -467,13 +458,13 @@ document.getElementById('exGo').addEventListener('click', async () => {
     else { const full = renderMap(sc, true, true); out = layer(Math.round(r.w*sc), Math.round(r.h*sc)); const og = out.getContext('2d'); og.drawImage(full, Math.round(r.x*sc), Math.round(r.y*sc), out.width, out.height, 0, 0, out.width, out.height);
       const cw2 = out.width, ch2 = out.height, vg = og.createRadialGradient(cw2/2, ch2/2, 0, cw2/2, ch2/2, Math.hypot(cw2, ch2)*.55); vg.addColorStop(.62, 'rgba(107,63,18,0)'); vg.addColorStop(.9, 'rgba(107,63,18,.22)'); vg.addColorStop(1, 'rgba(74,42,10,.42)'); og.fillStyle = vg; og.fillRect(0, 0, cw2, ch2);
       if (frame) drawFrameRect(og, out.width, out.height, sc); }
-    const blob = await new Promise(res => out.toBlob(res, 'image/png')); await dl.save({filename: r ? 'pivnich-kraitren-fragment.png' : 'pivnich-kraitren.png', data: blob}); toast('PNG збережено'); }
+    const blob = await new Promise(res => out.toBlob(res, 'image/png')); await dl.save({filename: fileSafe(mapName(data)) + (r ? ' (фрагмент).png' : '.png'), data: blob}); toast('PNG збережено'); }
   catch (e) { if (!(e && e.code === 'declined')) toast('Не вдалося експортувати: ' + (e && (e.message || e.code) || e)); }
   busy.style.display = 'none'; busy.textContent = 'Перемальовую…'; });
 
 // ================= boot =================
 new ResizeObserver(() => { resize(); if (autoFit) fit(); }).observe(stage);
-setKind('mountain'); setTool('select'); updateUndo();
+setKind('mountain'); setTool('select'); updateUndo(); initLibraryUI();
 resize(); fit(); renderSide(); scheduleRender(0);
 if (document.fonts){ Promise.all(FONTS.map(([f]) => document.fonts.load(`36px "${f}"`).catch(() => {}))).then(() => draw()); }
 initCaps();
