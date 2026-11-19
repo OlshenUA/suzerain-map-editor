@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактор мап — Крайтрен</title>
+<meta name="description" content="Редактор мап у стилі чорнила на пергаменті для світу Сюзеренату">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Kurale&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ruslan+Display&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <div class="bar" role="toolbar" aria-label="Інструменти">
+    <h1>Північ Крайтрену</h1>
+    <div class="group" id="tools">
+      <button class="btn" data-tool="select" aria-pressed="true">Вибір</button>
+      <button class="btn" data-tool="poly" aria-pressed="false">Полігон</button>
+      <button class="btn" data-tool="ellipse" aria-pressed="false">Овал</button>
+      <button class="btn" data-tool="river" aria-pressed="false">Річка</button>
+      <button class="btn" data-tool="stamp" aria-pressed="false">Штамп</button>
+      <button class="btn" data-tool="route" aria-pressed="false">Шляхи</button>
+      <button class="btn" data-tool="text" aria-pressed="false">Текст</button>
+    </div>
+    <div class="group" id="routeBar" aria-label="Вид шляху" style="display:none"><button class="btn" data-route="road" aria-pressed="true">Дорога</button><button class="btn" data-route="rail" aria-pressed="false">Залізниця</button><button class="btn" data-route="path" aria-pressed="false">Шлях (пунктир)</button></div>
+    <div class="group" id="stampsBar" aria-label="Який штамп" style="display:none"></div>
+    <div class="group" id="kinds" aria-label="Що малювати">
+      <button class="btn" data-kind="land" aria-pressed="false">Суша</button>
+      <button class="btn" data-kind="lake" aria-pressed="false">Озеро</button>
+      <button class="btn" data-kind="mountain" aria-pressed="true">Гори</button>
+      <button class="btn" data-kind="forest" aria-pressed="false">Ліс</button>
+      <button class="btn" data-kind="marsh" aria-pressed="false">Болото</button>
+      <button class="btn" data-kind="vill" aria-pressed="false">Село</button>
+      <button class="btn" data-kind="town" aria-pressed="false">Місто</button>
+      <button class="btn" data-kind="fort" aria-pressed="false">Фортеця</button>
+      <button class="btn" data-kind="stain" aria-pressed="false">Пляма</button>
+      <button class="btn" data-kind="region" aria-pressed="false">Область генерації</button>
+    </div>
+    <div class="group">
+      <button class="btn" id="undo" title="Ctrl+Z">Назад</button>
+      <button class="btn" id="redo" title="Ctrl+Shift+Z">Вперед</button>
+    </div>
+    <div class="spacer"></div>
+    <span class="status" id="status">Завантаження…</span>
+    <button class="btn solid" id="fit">Вся мапа</button>
+    <button class="btn solid" id="newBtn">Нова</button>
+    <button class="btn solid" id="openBtn" title="Ctrl+O">Відкрити</button>
+    <button class="btn solid" id="jsonBtn">JSON</button>
+    <button class="btn solid" id="exportBtn">Експорт PNG</button>
+    <button class="btn primary" id="saveBtn" title="Ctrl+S, Ctrl+Shift+S — зберегти як">Зберегти</button>
+  </div>
+  <div class="main">
+    <div class="stage" id="stage">
+      <canvas id="view" aria-label="Мапа півночі з зонами для редагування"></canvas>
+      <div class="busy" id="busy">Перемальовую…</div>
+    </div>
+    <aside class="side" id="side"></aside>
+  </div>
+</div>
+
+<div class="modal" id="jsonModal" role="dialog" aria-modal="true" aria-labelledby="jsonTitle">
+  <div class="card">
+    <h3 id="jsonTitle">Дані мапи (JSON)</h3>
+    <p>Скопіюйте, щоб зберегти резервну копію, або вставте сюди JSON і натисніть «Завантажити».</p>
+    <textarea id="jsonText" rows="10" aria-label="JSON мапи"></textarea>
+    <div class="btns" style="margin-top:10px">
+      <button class="btn solid" id="jsonCopy">Копіювати</button>
+      <button class="btn solid" id="jsonLoad">Завантажити з поля</button>
+      <label class="btn solid" style="display:inline-flex;align-items:center">Файл…<input type="file" id="jsonFile" accept=".json,application/json" style="display:none"></label>
+      <span class="spacer"></span>
+      <button class="btn solid" id="jsonReset">Скинути до початкової</button>
+      <button class="btn primary" id="jsonClose">Закрити</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="exportModal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+  <div class="card">
+    <h3 id="exportTitle">Експорт PNG</h3>
+    <div class="row"><label>Що експортувати</label>
+      <label class="check"><input type="radio" name="exArea" value="all" checked> Вся мапа</label>
+      <label class="check"><input type="radio" name="exArea" value="rect" id="exRectRadio"> Виділена рамка <span id="exRectInfo" style="color:var(--muted)"></span></label>
+      <div class="btns"><button class="btn solid" id="exPick">Виділити рамку на мапі</button></div></div>
+    <div class="row"><label for="exScale">Якість</label><select id="exScale"><option value="1">Звичайна (1×)</option><option value="1.5" selected>Висока (1.5×)</option><option value="2">Дуже висока (2×)</option></select></div>
+    <label class="check"><input type="checkbox" id="exFrame" checked> Декоративна рамка по краю</label>
+    <p class="help" id="exSize" style="padding:0;margin:6px 0 12px"></p>
+    <div class="btns"><span class="spacer"></span><button class="btn solid" id="exCancel">Скасувати</button><button class="btn primary" id="exGo">Експортувати</button></div>
+  </div>
+</div>
+<div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="card">
+    <h3 id="confirmTitle">Підтвердження</h3>
+    <p id="confirmText"></p>
+    <div class="btns"><span class="spacer"></span><button class="btn solid" id="confirmNo">Скасувати</button><button class="btn primary" id="confirmYes">Так</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+
+<script src="js/default-map.js"></script>
+<script src="js/core.js"></script>
+<script src="js/render.js"></script>
+<script src="js/generators.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
