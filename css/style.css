@@ -21,7 +21,8 @@ button,select,input{font:inherit;color:inherit}
 .spacer{flex:1}
 .status{color:var(--muted);font-size:13px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
 /* на широких екранах — один рядок; статус стискається першим */
-@media (min-width:1200px){ .bar{flex-wrap:nowrap} .bar > *{flex-shrink:0} .bar > .status{flex-shrink:1} }
+/* панель в один рядок, якщо вміщається (ui.js fitBar вимірює й додає .wrap, коли ні); статус стискається першим */
+.bar:not(.wrap){flex-wrap:nowrap} .bar:not(.wrap) > *{flex-shrink:0} .bar:not(.wrap) > .status{flex-shrink:1}
 .main{flex:1;display:flex;min-height:0}
 .stage{position:relative;flex:1 1 auto;min-width:0;min-height:0;overflow:hidden;background:#141210}
 .stage canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
@@ -155,4 +156,24 @@ html[lang="en"] [data-lang="uk"], html:not([lang="en"]) [data-lang="en"]{display
 .tplcard.example{border-color:#7a5a2c;background:linear-gradient(180deg,#3a3024,var(--panel2))}
 .badge{font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink);background:var(--accent);border-radius:4px;padding:1px 6px;align-self:flex-start;margin-bottom:2px}
 #startLangBtn{display:inline-flex;align-items:center;gap:8px}
+/* довідка */
+.helpcard{max-width:880px;display:flex;flex-direction:column;max-height:calc(100dvh - 32px);padding:0;overflow:hidden}
+.helphead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+.helphead h3{margin:0;flex:1;min-width:200px}
+.helptabs{margin:0}
+.helpbody{overflow-y:auto;padding:14px 18px;flex:1}
+.helpbody h4{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:16px 0 6px;font-weight:600}
+.helpfoot{display:flex;align-items:center;gap:10px;padding:10px 18px;border-top:1px solid var(--line);flex-wrap:wrap}
+.helpnote{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.qmark{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);color:var(--text);font-weight:700;flex:0 0 auto}
+.shotwrap{position:relative;margin:4px 0 10px}
+.helpshot{display:block;width:100%;height:auto;border-radius:8px;border:1px solid var(--line)}
+.callout{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(0,0,0,.45);font-size:14px}
+.helplist{margin:8px 0;padding-left:22px;font-size:14px}.helplist li{margin-bottom:6px}
+.helpp{font-size:14px;margin:0 0 8px;color:var(--text)}
+.tooldl{margin:6px 0 10px}.tooldl dt{margin-top:10px;font-size:14px}.tooldl dd{margin:3px 0 0 0;font-size:13px;color:var(--muted)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;margin:6px 0 12px}
+.gallery figure{margin:0;text-align:center}.gallery canvas{width:100%;height:auto;border-radius:6px;border:1px solid var(--line);display:block}
+.gallery figcaption{font-size:12px;color:var(--muted);margin-top:3px}
+.keytable{border-collapse:collapse;width:100%;font-size:14px}.keytable td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}.keytable td:first-child{white-space:nowrap;width:1%;padding-right:18px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#2f2a24;border:1px solid var(--line);padding:8px 14px;border-radius:8px;display:none;z-index:20}

@@ -165,7 +165,9 @@ function createFromDialog(){
   const name = document.getElementById('nmName').value.trim() || 'Нова мапа'; const [w, h] = nmSize().map(v => Math.round(v));
   if (!(w >= MIN_SIDE && h >= MIN_SIDE && w <= MAX_SIDE && h <= MAX_SIDE)){ toast(`Розмір має бути від ${MIN_SIDE} до ${MAX_SIDE} px з кожного боку`); return; }
   const d = buildFromTemplate(curTemplate(), w, h, name);
-  if (createMap(d)){ closeModal('newModal'); toast('Створено «' + name + '»'); } }
+  if (createMap(d)){ closeModal('newModal');
+    // перша створена мапа — показуємо довідку (один раз)
+    if (!lsGet('suzerain-help-seen')){ lsSet('suzerain-help-seen', '1'); setTimeout(() => toggleHelp(true, 'basics'), 400); } toast('Створено «' + name + '»'); } }
 
 // ================= межі мапи =================
 let boundsPreview = null; // {l, t, r, b} — скільки додати (+) чи обрізати (−) з кожного боку
@@ -192,10 +194,13 @@ function drawBoundsPreview(g, px){ const p = boundsPreview; if (!p) return;
 // ================= обробники (підключає boot у ui.js) =================
 // ================= стартовий екран =================
 // Мова (перший візит), «Продовжити» останню мапу, нова мапа з шаблону.
+const START_TEXT = {uk: ['Сюзерен: Безкоштовний Редактор Фентезі Мап', 'Безкоштовний редактор фентезі-мап у стилі чорнила на пергаменті. Працює в браузері, без реєстрації.'],
+  en: ['Suzerain: Free Fantasy Map Editor', 'A free fantasy map editor in an ink-on-parchment style. Runs in your browser, no sign-up.']};
+function startHead(l){ document.getElementById('startTitle').textContent = START_TEXT[l][0]; document.getElementById('startSub').textContent = START_TEXT[l][1]; }
 function openStart(){
   const needLang = !LANG; document.getElementById('startLang').hidden = !needLang; document.getElementById('startMain').hidden = needLang;
-  document.getElementById('startTitle').textContent = APP_NAME();
-  document.getElementById('startSub').textContent = L('Безкоштовний редактор фентезі-мап у стилі чорнила на пергаменті. Працює в браузері, без реєстрації.', 'A free fantasy map editor in an ink-on-parchment style. Runs in your browser, no sign-up.');
+  // заголовок вікна: поки мову не обрано — мовою браузера, а при наведенні на мову — нею
+  startHead(needLang ? ((navigator.language || '').toLowerCase().startsWith('uk') ? 'uk' : 'en') : lang());
   for (const b of document.querySelectorAll('[data-pick]')) b.innerHTML = flagSvg(b.dataset.pick) + '<span>' + (b.dataset.pick === 'uk' ? 'Українська' : 'English') + '</span>';
   document.getElementById('startLangBtn').innerHTML = flagSvg(lang() === 'en' ? 'uk' : 'en') + (lang() === 'en' ? 'Українська' : 'English');
   const cur = currentMapId && libList().find(x => x.id === currentMapId);
@@ -204,6 +209,7 @@ function openStart(){
   openModal('startModal'); }
 function initStart(){
   const $ = id => document.getElementById(id);
+  for (const ev of ['mouseover', 'focusin']) $('startLang').addEventListener(ev, e => { const p = e.target.closest('[data-pick]'); if (p) startHead(p.dataset.pick); });
   $('startModal').addEventListener('click', e => {
     const p = e.target.closest('[data-pick]'); if (p){ setLang(p.dataset.pick); openStart(); return; }
     const t = e.target.closest('[data-start]'); if (t){ openNewMap(t.dataset.start); return; }

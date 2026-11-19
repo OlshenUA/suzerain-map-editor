@@ -297,7 +297,29 @@ function renderMapSettings(){ const mapBody = document.getElementById('mapBody')
 
 // ================= help dialog =================
 const helpM = document.getElementById('helpModal');
-function toggleHelp(open){ helpM.classList.toggle('open', open ?? !helpM.classList.contains('open')); if (helpM.classList.contains('open')) { document.getElementById('helpClose').focus({preventScroll: true}); helpM.querySelector('.card').scrollTop = 0; } }
+// Довідка: вкладки «Основи / Інструменти / Гарячі клавіші»; галерея лісів і ландшафтів малюється тими ж функціями, що й мапа.
+function setHelpTab(t){ for (const b of helpM.querySelectorAll('[data-htab]')) b.setAttribute('aria-pressed', String(b.dataset.htab === t)); for (const p of helpM.querySelectorAll('[data-hpane]')) p.hidden = p.dataset.hpane !== t; helpM.querySelector('.helpbody').scrollTop = 0; if (t === 'tools') renderHelpGallery(); }
+function toggleHelp(open, tab){ helpM.classList.toggle('open', open ?? !helpM.classList.contains('open')); if (helpM.classList.contains('open')){ if (tab) setHelpTab(tab); document.getElementById('helpClose').focus({preventScroll: true}); helpM.querySelector('.helpbody').scrollTop = 0; } }
+helpM.addEventListener('click', e => { const b = e.target.closest('[data-htab]'); if (b) setHelpTab(b.dataset.htab); });
+function renderHelpGallery(){
+  for (const el of helpM.querySelectorAll('[data-gallery]')){ if (el.dataset.done) continue; el.dataset.done = '1'; const trees = el.dataset.gallery === 'trees';
+    const kinds = trees ? Object.keys(TREE_TYPES) : Object.keys(TERRAINS);
+    el.innerHTML = kinds.map(k => `<figure><canvas width="240" height="150" data-k="${k}"></canvas><figcaption>${esc(trees ? TREE_TYPES[k].name : TERRAINS[k].name)}</figcaption></figure>`).join('');
+    el.querySelectorAll('canvas').forEach(c => drawHelpSample(c.getContext('2d'), trees, c.dataset.k)); } }
+function drawHelpSample(g, trees, k){
+  g.scale(2, 2); g.fillStyle = PAPER_L; g.fillRect(0, 0, 120, 75); const R = rng(strHash(k) + 11); const pts = [];
+  const spread = (n, minD, x0, y0, x1, y1) => { for (let t = 0; t < n * 30 && pts.length < n; t++){ const x = x0 + R() * (x1 - x0), y = y0 + R() * (y1 - y0); if (pts.every(p => Math.hypot(p[0] - x, (p[1] - y) * 1.6) > minD)) pts.push([x, y]); } return pts.sort((a, b) => a[1] - b[1]); };
+  const stip = n => { g.fillStyle = INK; g.globalAlpha = .33; for (let i = 0; i < n; i++) g.fillRect(6 + R() * 108, 8 + R() * 62, 1.3, 1.3); g.globalAlpha = 1; };
+  const dashes = n => { g.beginPath(); for (let i = 0; i < n; i++){ const x = 8 + R() * 104, y = 10 + R() * 60, l = 3 + R() * 4; g.moveTo(x - l / 2, y); g.lineTo(x + l / 2, y); } g.strokeStyle = INK; g.globalAlpha = .5; g.lineWidth = .7; g.stroke(); g.globalAlpha = 1; };
+  if (trees){ for (const [x, y] of spread(14, 11, 10, 26, 110, 70)) drawTreeKind(g, x, y, 9, (R() * 1e9) | 0, pickTree(k, R)); return; }
+  if (k === 'snow'){ stip(160); g.beginPath(); for (let i = 0; i < 14; i++){ const x = 8 + R() * 100, y = 10 + R() * 60, l = 7 + R() * 6; g.moveTo(x, y); g.quadraticCurveTo(x + l / 2, y - l * .35, x + l, y); } g.strokeStyle = INK; g.globalAlpha = .55; g.lineWidth = .8; g.stroke(); g.globalAlpha = 1; }
+  else if (k === 'tundra'){ stip(110); for (const [x, y] of spread(16, 9, 8, 14, 112, 70)) R() < .25 ? drawStone(g, x, y, 1.6 + R() * 1.2) : drawGrass(g, x, y, 3.5 + R() * 2, (R() * 1e9) | 0); }
+  else if (k === 'steppe'){ dashes(18); for (const [x, y] of spread(14, 12, 8, 16, 112, 70)) drawGrass(g, x, y, 4.5 + R() * 2.5, (R() * 1e9) | 0); }
+  else if (k === 'meadow'){ dashes(10); for (const [x, y] of spread(18, 10, 8, 14, 112, 70)) drawMeadow(g, x, y, 4.5 + R() * 2.5, (R() * 1e9) | 0); }
+  else if (k === 'hills'){ for (const [x, y] of spread(5, 34, 22, 30, 98, 66)) drawHill(g, x, y, 15 + R() * 6, (R() * 1e9) | 0); }
+  else if (k === 'marsh'){ for (const [x, y] of spread(16, 10, 8, 14, 112, 70)) R() < .38 ? drawWet(g, x, y, 5.5 + R() * 3, (R() * 1e9) | 0) : drawTuft(g, x, y, 6 + R() * 3, (R() * 1e9) | 0); }
+  else if (k === 'desert'){ stip(220); for (const [x, y] of spread(5, 30, 18, 24, 102, 68)) drawDune(g, x, y, 12 + R() * 6, (R() * 1e9) | 0); }
+}
 document.getElementById('helpBtn').addEventListener('click', () => toggleHelp());
 document.getElementById('helpClose').addEventListener('click', () => toggleHelp(false));
 helpM.addEventListener('click', e => { if (e.target === helpM) toggleHelp(false); });
@@ -504,6 +526,10 @@ new ResizeObserver(() => { const r = stage.getBoundingClientRect(); const dl = s
   resize(); if (dl){ vs.ox -= dl; draw(); } else if (autoFit) fit(); }).observe(stage);
 setKind('mountain'); setTool('select'); updateUndo(); initLibraryUI(); initAI();
 // мова: прапорець у куті перемикає українську / англійську; панелі перебудовуються, решту перекладає i18n.js
+// Верхня панель: один рядок, якщо все вміщається; інакше переносимо (українські написи довші за англійські).
+const barEl = document.querySelector('.bar');
+function fitBar(){ barEl.classList.remove('wrap'); if (barEl.scrollWidth > barEl.clientWidth + 1) barEl.classList.add('wrap'); }
+new ResizeObserver(fitBar).observe(document.body); window.addEventListener('langchange', () => requestAnimationFrame(fitBar));
 function renderLangBtn(){ const b = document.getElementById('langBtn'); b.innerHTML = flagSvg(lang()) + '<span>' + (lang() === 'en' ? 'EN' : 'UA') + '</span>'; }
 document.getElementById('langBtn').addEventListener('click', () => setLang(lang() === 'en' ? 'uk' : 'en'));
 window.addEventListener('langchange', () => { renderLangBtn(); if (!currentMapId) data.name = L('Північ Крайтрену', 'Northern Kraitren'); // приклад за стартовим екраном ще не збережено
@@ -513,4 +539,15 @@ resize(); fit(); renderSide(); scheduleRender(0);
 if (document.fonts){ Promise.all(FONTS.map(([f]) => document.fonts.load(`36px "${f}"`).catch(() => {}))).then(() => draw()); }
 initCaps();
 if (lang() === 'en') setLang('en'); // перекласти вже наявну розмітку
-initStart();
+// Режим знімків для довідки: ?shot=overview|brush|ai&lang=uk|en — без стартового екрана й без збереження (див. tools/help-shots.md).
+const SHOT = new URLSearchParams(location.search).get('shot');
+function setupShot(name){
+  setLang(new URLSearchParams(location.search).get('lang') === 'en' ? 'en' : 'uk'); data.name = L('Північ Крайтрену', 'Northern Kraitren'); updateTitle(); setStatus(L('Збережено в браузері', 'Saved in browser'));
+  if (name === 'overview'){ setTool('select'); selected = data.shapes.find(s => s.id === 's29'); renderSide(); setTimeout(fit, 150); }
+  if (name === 'brush'){ setTool('brush'); setKind('terrain', 'snow'); brushOpts.size = 90; renderBrushOpts();
+    setTimeout(() => { const r = stage.getBoundingClientRect(); autoFit = false; vs.scale = 1.05; vs.ox = r.width / 2 - 900 * vs.scale; vs.oy = r.height / 2 - 380 * vs.scale;
+      brushStroke = {pts: [[640, 300], [720, 340], [820, 330], [920, 380], [1010, 400], [1090, 450]], r: 45, erase: false}; brushCursor = [1090, 450]; draw(); }, 150); }
+  if (name === 'ai'){ const ops = [{op: 'transform', id: 's60', scale: 1.15}, {op: 'set', id: 's29', fields: {trees: 'broadleaf'}}, {op: 'add', shape: {kind: 'terrain', terrain: 'desert', shape: 'poly', pts: [[2080, 280], [2420, 250], [2470, 520], [2120, 560]]}}];
+    const r = aiApply(data, ops); aiStartPreview(r.d, r.errors); setTimeout(() => { const l = document.getElementById('aiChanges'); if (l) l.hidden = false; }, 100); }
+}
+if (SHOT) setupShot(SHOT); else initStart();

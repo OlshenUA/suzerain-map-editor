@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Kurale&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ruslan+Display&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=30">
+<link rel="stylesheet" href="css/style.css?v=33">
 </head>
 <body>
 <div class="app">
@@ -193,110 +193,164 @@
   </div>
 </div>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-  <div class="card wide">
-    <div data-lang="uk" data-noi18n>
-    <h3 id="helpTitle">Як користуватися редактором</h3>
-    <h4>Основне</h4>
-    <ul class="help">
-      <li><b>Вибір</b> (<kbd>V</kbd>): клік по зоні вибирає її, тягніть вершини. Вибрану зону можна тягнути цілою.</li>
-      <li>Порожнє місце — тягнути мапу, колесо — масштаб, <kbd>Пробіл</kbd>+тягнути — теж зсув.</li>
-      <li><b>Полігон</b> (<kbd>P</kbd>) і <b>Овал</b> (<kbd>O</kbd>): у панелі ліворуч оберіть, що малюєте — сушу, озеро, гори, ліс, область генерації…</li>
-      <li><b>Пензель</b> (<kbd>B</kbd>): тягніть, щоб замалювати область того типу, що вибрано ліворуч. <kbd>[</kbd> <kbd>]</kbd> — розмір, <kbd>Alt</kbd> або «Стирати» — гумка. Мазки одного типу зливаються в одну фігуру; стерте посеред суші стає озером.</li>
-      <li><b>Ландшафт</b> — сніг, тундра, степ, поля (вогкі трав’яні луки помірного клімату), пагорби, болото, пустеля: малюйте полігоном, овалом чи пензлем. Позначки ставляться лише на суші.</li>
-      <li><b>Ліс</b>: вид дерев (хвойні, листяні, мішані, пальми, джунглі, сухостій) — у налаштуваннях лісу; новий ліс бере вид, вибраний останнім.</li>
-      <li><b>Крива</b> (<kbd>R</kbd>): річка, дорога, залізниця чи пунктирний шлях — вид обирається в панелі ліворуч. Клікайте точки, подвійний клік або <kbd>Enter</kbd> — завершити. Точки біля іншої річки, озера чи берега (для доріг — біля інших шляхів і штампів) прилипають до них (помаранчеве коло), <kbd>Shift</kbd> — без прилипання.</li>
-      <li><kbd>Delete</kbd> — видалити зону або вибрану вершину, <kbd>Ctrl+Z</kbd> — скасувати.</li>
-      <li>Нова суша, що перекриває стару, зливається з нею в одне узбережжя.</li>
-    </ul>
-    <h4>Штампи, написи й шляхи</h4>
-    <ul class="help">
-      <li>«Штамп» (<kbd>S</kbd>) — оберіть вигляд у панелі ліворуч і клікніть на мапі.</li>
-      <li>«Текст» (<kbd>T</kbd>) — протягніть рамку.</li>
-      <li>Дороги, залізниці й шляхи малюються «Кривою»; їхні кінці прилипають до інших шляхів і штампів.</li>
-      <li>Штампи й написи можна тягати, а розмір змінювати за помаранчевий квадрат у куті.</li>
-    </ul>
-    <h4>Генерація струмків, озерець і боліт</h4>
-    <ul class="help">
-      <li>Намалюйте полігон чи овал типу «Область генерації», виберіть його — і генеруйте в ньому озерця, струмки й болота окремо.</li>
-    </ul>
-    <h4>Контури й вибір</h4>
-    <ul class="help">
-      <li>Мишкою вибираються лише ті типи, що увімкнені в бічній панелі. Якщо контури вимкнено, зони не вибираються.</li>
-    </ul>
-    <h4>ШІ</h4>
-    <ul class="help">
-      <li>Кнопка «ШІ»: опишіть зміни («зроби цю сушу більшою», «додай сніг на півночі»), натисніть «Скопіювати для ШІ» й вставте в будь-який чат ШІ. Вибрана на мапі фігура теж потрапляє в запит.</li>
-      <li>Відповідь ШІ вставте в поле й натисніть «Переглянути зміни». Змінене підсвічується: <span style="color:#ffb02e">змінено</span>, <span style="color:#5fd068">додано</span>, <span style="color:#ff5a4a">видалено</span>. «До / Після» (або <kbd>C</kbd>) — порівняти; мапу можна рухати й масштабувати.</li>
-      <li>«Зберегти» — прийняти (скасовується «Назад»), «Скинути» — повернути як було. Формат для ШІ: файл AI.md у репозиторії.</li>
-    </ul>
-    <h4>Мапи й файли</h4>
-    <ul class="help">
-      <li>«Мапи» або клік по назві зліва вгорі — список ваших мап: відкрити, перейменувати, копія, видалити, «Як шаблон».</li>
-      <li>«Нова мапа…» — назва, шаблон (чистий аркуш, острів, узбережжя, ваші шаблони…) і розмір.</li>
-      <li>«Змінити межі…» у бічній панелі (коли нічого не вибрано) — розширити чи обрізати мапу з будь-якого боку.</li>
-      <li>Кожна зміна автоматично зберігається в браузері. «Зберегти» (<kbd>Ctrl+S</kbd>) — копія в JSON-файл; <kbd>Ctrl+O</kbd> — відкрити файл як нову мапу.</li>
-    </ul>
+  <div class="card wide helpcard">
+    <div class="helphead">
+      <h3 id="helpTitle"><span data-lang="uk" data-noi18n>Як користуватися редактором</span><span data-lang="en">How to use the editor</span></h3>
+      <div class="seg helptabs"><button class="btn" data-htab="basics" aria-pressed="true">Основи</button><button class="btn" data-htab="tools" aria-pressed="false">Інструменти</button><button class="btn" data-htab="keys" aria-pressed="false">Гарячі клавіші</button></div>
     </div>
-    <div data-lang="en">
-    <h3>How to use the editor</h3>
-    <h4>Basics</h4>
-    <ul class="help">
-      <li><b>Select</b> (<kbd>V</kbd>): click a zone to select it, drag its vertices. You can drag a selected zone as a whole.</li>
-      <li>Empty space — drag the map, wheel — zoom, <kbd>Space</kbd>+drag — pan as well.</li>
-      <li><b>Polygon</b> (<kbd>P</kbd>) and <b>Ellipse</b> (<kbd>O</kbd>): in the left panel choose what you draw — land, lake, mountains, forest, generation area…</li>
-      <li><b>Brush</b> (<kbd>B</kbd>): drag to paint an area of the type selected on the left. <kbd>[</kbd> <kbd>]</kbd> — size, <kbd>Alt</kbd> or “Erase” — eraser. Strokes of one type merge into one shape; erasing in the middle of land makes a lake.</li>
-      <li><b>Landscape</b> — snow, tundra, steppe, fields (damp temperate grassland), hills, marsh, desert: draw with polygon, ellipse or brush. Marks appear only on land.</li>
-      <li><b>Forest</b>: tree type (conifers, broadleaf, mixed, palms, jungle, dead trees) is in the forest settings; a new forest uses the type chosen last.</li>
-      <li><b>Curve</b> (<kbd>R</kbd>): river, road, railway or dashed trail — pick the type in the left panel. Click points, double-click or <kbd>Enter</kbd> to finish. Points near another river, lake or coast (for roads — near other routes and stamps) snap to them (orange circle), <kbd>Shift</kbd> — no snapping.</li>
-      <li><kbd>Delete</kbd> — delete the zone or the selected vertex, <kbd>Ctrl+Z</kbd> — undo.</li>
-      <li>New land that overlaps old land merges into one coastline.</li>
-    </ul>
-    <h4>Stamps, labels and routes</h4>
-    <ul class="help">
-      <li>“Stamp” (<kbd>S</kbd>) — pick a look in the left panel and click on the map.</li>
-      <li>“Text” (<kbd>T</kbd>) — drag a frame.</li>
-      <li>Roads, railways and trails are drawn with the “Curve”; their ends snap to other routes and stamps.</li>
-      <li>Stamps and labels can be dragged; resize them with the orange square in the corner.</li>
-    </ul>
-    <h4>Generating streams, ponds and marshes</h4>
-    <ul class="help">
-      <li>Draw a polygon or ellipse of type “Generation area”, select it — and generate ponds, streams and marshes in it separately.</li>
-    </ul>
-    <h4>Outlines and selection</h4>
-    <ul class="help">
-      <li>The mouse selects only the types enabled in the side panel. If outlines are off, zones cannot be selected.</li>
-    </ul>
-    <h4>AI</h4>
-    <ul class="help">
-      <li>The “AI” button: describe the changes (“make this land bigger”, “add snow in the north”), press “Copy for AI” and paste it into any AI chat. A shape selected on the map is included in the request.</li>
-      <li>Paste the AI reply into the field and press “Preview changes”. Changes are highlighted: <span style="color:#ffb02e">changed</span>, <span style="color:#5fd068">added</span>, <span style="color:#ff5a4a">deleted</span>. “Before / After” (or <kbd>C</kbd>) — compare; you can pan and zoom the map.</li>
-      <li>“Save” — accept (undo with “Undo”), “Reset” — back to how it was. The format for AI: AI.en.md in the repository.</li>
-    </ul>
-    <h4>Maps and files</h4>
-    <ul class="help">
-      <li>“Maps” or a click on the name at the top left — your map list: open, rename, copy, delete, “As template”.</li>
-      <li>“New map…” — name, template (blank sheet, island, coast, your templates…) and size.</li>
-      <li>“Change borders…” in the side panel (when nothing is selected) — expand or crop the map on any side.</li>
-      <li>Every change is saved automatically in the browser. “Save” (<kbd>Ctrl+S</kbd>) — a copy to a JSON file; <kbd>Ctrl+O</kbd> — open a file as a new map.</li>
-    </ul>
+    <div class="helpbody">
+      <section data-hpane="basics">
+        <div class="shotwrap"><img class="helpshot" data-lang="uk" src="img/help/overview.uk.jpg" alt="Вигляд редактора" loading="lazy"><img class="helpshot" data-lang="en" src="img/help/overview.en.jpg" alt="Editor overview" loading="lazy">
+          <span class="callout" style="left:40%;top:3%">1</span><span class="callout" style="left:10%;top:36%">2</span><span class="callout" style="left:50%;top:54%">3</span><span class="callout" style="left:88%;top:36%">4</span></div>
+        <div data-lang="uk" data-noi18n>
+          <ol class="helplist">
+            <li><b>Верхня панель</b> — інструменти, «Назад / Вперед», <b>ШІ</b>, <b>Мапи</b> (усі ваші мапи), «Вся мапа», експорт PNG, «Зберегти», <b>?</b> і прапорець мови.</li>
+            <li><b>Ліва панель</b> — що малювати активним інструментом або налаштування вибраної фігури: густота, розмір, вид дерев, ширина річки…</li>
+            <li><b>Мапа</b> — тягніть порожнє місце, щоб рухати мапу; колесо — масштаб. Клік по фігурі вибирає її.</li>
+            <li><b>Права панель</b> — назва й межі мапи, варіант розкладки, окремі дерева, які контури показувати й вибирати.</li>
+          </ol>
+          <h4>Як почати</h4>
+          <ul class="help">
+            <li>Оберіть <b>Полігон</b>, <b>Овал</b> або <b>Пензель</b>, а ліворуч — що малюєте: сушу, гори, ліс, ландшафт…</li>
+            <li>Намальоване можна вибрати інструментом <b>Вибір</b> і змінити ліворуч: розмір, густоту, вид дерев, точки контуру.</li>
+            <li>Усе зберігається автоматично в цьому браузері. «Зберегти» робить копію в JSON-файл — для резервної копії чи іншого комп’ютера.</li>
+            <li><b>Мапи</b> або клік по назві зліва вгорі — список мап: нова, відкрити, перейменувати, копія, «Як шаблон», видалити.</li>
+          </ul>
+        </div>
+        <div data-lang="en">
+          <ol class="helplist">
+            <li><b>Top bar</b> — tools, “Undo / Redo”, <b>AI</b>, <b>Maps</b> (all your maps), “Fit map”, PNG export, “Save”, <b>?</b> and the language flag.</li>
+            <li><b>Left panel</b> — what the active tool draws, or the settings of the selected shape: density, size, tree type, river width…</li>
+            <li><b>Map</b> — drag empty space to pan; wheel to zoom. Click a shape to select it.</li>
+            <li><b>Right panel</b> — map name and borders, layout variant, single trees, which outlines to show and select.</li>
+          </ol>
+          <h4>Getting started</h4>
+          <ul class="help">
+            <li>Pick <b>Polygon</b>, <b>Ellipse</b> or <b>Brush</b>, and on the left what you draw: land, mountains, forest, landscape…</li>
+            <li>Select anything you drew with <b>Select</b> and change it on the left: size, density, tree type, outline points.</li>
+            <li>Everything is saved automatically in this browser. “Save” makes a copy in a JSON file — for a backup or another computer.</li>
+            <li><b>Maps</b> or a click on the name at the top left — your map list: new, open, rename, copy, “As template”, delete.</li>
+          </ul>
+        </div>
+      </section>
+      <section data-hpane="tools" hidden>
+        <div data-lang="uk" data-noi18n>
+          <dl class="tooldl">
+            <dt><b>Вибір</b> <kbd>V</kbd></dt><dd>Клік вибирає фігуру (найменшу під курсором: ліс у суші, село в лісі). Тягніть фігуру цілою або її точки; <kbd>Alt</kbd>+клік на краю додає точку, правий клік по точці — видаляє.</dd>
+            <dt><b>Полігон</b> <kbd>P</kbd> · <b>Овал</b> <kbd>O</kbd></dt><dd>Ліворуч оберіть тип: суша, озеро, гори, ліс, ландшафт, село, місто, фортеця, пляма, область генерації. Полігон — клікайте точки, <kbd>Enter</kbd> чи подвійний клік завершує; овал — протягніть.</dd>
+            <dt><b>Пензель</b> <kbd>B</kbd></dt><dd>Замальовуйте область того ж типу, що й полігоном. Мазки одного типу зливаються в одну фігуру. «Стирати» або <kbd>Alt</kbd> — гумка: стерте посеред суші стає озером, мазок через берег робить затоку.</dd>
+          </dl>
+          
+        </div>
+        <div data-lang="en">
+          <dl class="tooldl">
+            <dt><b>Select</b> <kbd>V</kbd></dt><dd>Click to select a shape (the smallest one under the cursor: forest inside land, village inside forest). Drag the whole shape or its points; <kbd>Alt</kbd>+click on the edge adds a point, right-click on a point deletes it.</dd>
+            <dt><b>Polygon</b> <kbd>P</kbd> · <b>Ellipse</b> <kbd>O</kbd></dt><dd>On the left pick the type: land, lake, mountains, forest, landscape, village, town, fortress, stain, generation area. Polygon — click points, <kbd>Enter</kbd> or double-click finishes; ellipse — drag.</dd>
+            <dt><b>Brush</b> <kbd>B</kbd></dt><dd>Paint an area of the same types as the polygon. Strokes of one type merge into one shape. “Erase” or <kbd>Alt</kbd> — eraser: erasing in the middle of land makes a lake, a stroke across the coast makes a bay.</dd>
+          </dl>
+        </div>
+        <div class="shotwrap"><img class="helpshot" data-lang="uk" src="img/help/brush.uk.jpg" alt="Пензель: мазок снігу" loading="lazy"><img class="helpshot" data-lang="en" src="img/help/brush.en.jpg" alt="Brush: a snow stroke" loading="lazy"></div>
+        <div data-lang="uk" data-noi18n>
+          <h4>Ліси й ландшафт</h4>
+          <p class="helpp">Вид дерев обирається в налаштуваннях лісу, ландшафт — у списку «Що малювати». Позначки ставляться лише на суші й обходять річки, дороги та поселення.</p>
+        </div>
+        <div data-lang="en">
+          <h4>Forests and landscape</h4>
+          <p class="helpp">Pick the tree type in the forest settings, the landscape in the “What to draw” list. Marks appear only on land and avoid rivers, roads and settlements.</p>
+        </div>
+        <div class="gallery" data-gallery="trees"></div>
+        <div class="gallery" data-gallery="terrain"></div>
+        <div data-lang="uk" data-noi18n>
+          <dl class="tooldl">
+            <dt><b>Крива</b> <kbd>R</kbd></dt><dd>Річка, дорога, залізниця чи пунктирний шлях — вид ліворуч. Клікайте точки; кінці річок прилипають до річок, озер і берега, дороги — до інших шляхів і штампів (<kbd>Shift</kbd> — без прилипання).</dd>
+            <dt><b>Штамп</b> <kbd>S</kbd> · <b>Текст</b> <kbd>T</kbd></dt><dd>Штамп — оберіть вигляд ліворуч і клікніть на мапі. Текст — протягніть рамку. Розмір змінюйте за помаранчевий квадрат у куті, підпис і шрифт — ліворуч.</dd>
+            <dt><b>Область генерації</b></dt><dd>Намалюйте її полігоном, виберіть — і генеруйте всередині струмки, озерця й болота.</dd>
+            <dt><b>ШІ</b></dt><dd>Напишіть, що змінити («зроби цю сушу більшою»), натисніть «Скопіювати для ШІ», вставте в будь-який чат ШІ, а відповідь — назад. Зміни підсвічуються, «До / Після» (<kbd>C</kbd>) порівнює, «Зберегти» чи «Скинути».</dd>
+          </dl>
+        </div>
+        <div data-lang="en">
+          <dl class="tooldl">
+            <dt><b>Curve</b> <kbd>R</kbd></dt><dd>River, road, railway or dashed trail — type on the left. Click points; river ends snap to rivers, lakes and the coast, roads to other routes and stamps (<kbd>Shift</kbd> — no snapping).</dd>
+            <dt><b>Stamp</b> <kbd>S</kbd> · <b>Text</b> <kbd>T</kbd></dt><dd>Stamp — pick a look on the left and click on the map. Text — drag a frame. Resize with the orange square in the corner, caption and font are on the left.</dd>
+            <dt><b>Generation area</b></dt><dd>Draw it with a polygon, select it — and generate streams, ponds and marshes inside.</dd>
+            <dt><b>AI</b></dt><dd>Write what to change (“make this land bigger”), press “Copy for AI”, paste it into any AI chat, and paste the reply back. Changes are highlighted, “Before / After” (<kbd>C</kbd>) compares, then “Save” or “Reset”.</dd>
+          </dl>
+        </div>
+        <div class="shotwrap"><img class="helpshot" data-lang="uk" src="img/help/ai.uk.jpg" alt="Порівняння змін ШІ" loading="lazy"><img class="helpshot" data-lang="en" src="img/help/ai.en.jpg" alt="Comparing AI changes" loading="lazy"></div>
+      </section>
+      <section data-hpane="keys" hidden>
+        <table class="keytable" data-lang="uk" data-noi18n>
+        <tr><td><kbd>V</kbd></td><td>Вибір</td></tr>
+        <tr><td><kbd>P</kbd></td><td>Полігон</td></tr>
+        <tr><td><kbd>O</kbd></td><td>Овал</td></tr>
+        <tr><td><kbd>B</kbd></td><td>Пензель</td></tr>
+        <tr><td><kbd>R</kbd> / <kbd>D</kbd></td><td>Крива (річка, дорога…)</td></tr>
+        <tr><td><kbd>S</kbd></td><td>Штамп</td></tr>
+        <tr><td><kbd>T</kbd></td><td>Текст</td></tr>
+        <tr><td><kbd>Enter</kbd> / <kbd>подвійний клік</kbd></td><td>Завершити полігон чи криву</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Скасувати малювання, зняти вибір</td></tr>
+        <tr><td><kbd>Shift</kbd></td><td>Без прилипання точок (крива)</td></tr>
+        <tr><td><kbd>[ ]</kbd></td><td>Розмір пензля</td></tr>
+        <tr><td><kbd>Alt</kbd> + <kbd>мазок</kbd></td><td>Стирати пензлем</td></tr>
+        <tr><td><kbd>Alt</kbd> + <kbd>клік</kbd></td><td>Додати точку на краю вибраної фігури</td></tr>
+        <tr><td><kbd>A</kbd> / <kbd>X</kbd></td><td>Режим «додати / видалити точки»</td></tr>
+        <tr><td><kbd>Delete</kbd></td><td>Видалити вибране або вибрану точку</td></tr>
+        <tr><td><kbd>Ctrl+Z</kbd></td><td>Назад</td></tr>
+        <tr><td><kbd>Ctrl+Shift+Z</kbd> / <kbd>Ctrl+Y</kbd></td><td>Вперед</td></tr>
+        <tr><td><kbd>Ctrl+S</kbd></td><td>Зберегти у файл (Ctrl+Shift+S — у новий)</td></tr>
+        <tr><td><kbd>Ctrl+O</kbd></td><td>Відкрити файл як нову мапу</td></tr>
+        <tr><td><kbd>Пробіл</kbd> + <kbd>тягнути</kbd></td><td>Рухати мапу (як і тягнути порожнє місце)</td></tr>
+        <tr><td><kbd>Колесо</kbd></td><td>Масштаб</td></tr>
+        <tr><td><kbd>C</kbd></td><td>Порівняння змін ШІ: до / після</td></tr>
+        <tr><td><kbd>F1</kbd> / <kbd>?</kbd></td><td>Ця довідка</td></tr>
+        </table>
+        <table class="keytable" data-lang="en">
+        <tr><td><kbd>V</kbd></td><td>Select</td></tr>
+        <tr><td><kbd>P</kbd></td><td>Polygon</td></tr>
+        <tr><td><kbd>O</kbd></td><td>Ellipse</td></tr>
+        <tr><td><kbd>B</kbd></td><td>Brush</td></tr>
+        <tr><td><kbd>R</kbd> / <kbd>D</kbd></td><td>Curve (river, road…)</td></tr>
+        <tr><td><kbd>S</kbd></td><td>Stamp</td></tr>
+        <tr><td><kbd>T</kbd></td><td>Text</td></tr>
+        <tr><td><kbd>Enter</kbd> / <kbd>double-click</kbd></td><td>Finish a polygon or curve</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Cancel drawing, deselect</td></tr>
+        <tr><td><kbd>Shift</kbd></td><td>No point snapping (curve)</td></tr>
+        <tr><td><kbd>[ ]</kbd></td><td>Brush size</td></tr>
+        <tr><td><kbd>Alt</kbd> + <kbd>stroke</kbd></td><td>Erase with the brush</td></tr>
+        <tr><td><kbd>Alt</kbd> + <kbd>click</kbd></td><td>Add a point on the edge of the selected shape</td></tr>
+        <tr><td><kbd>A</kbd> / <kbd>X</kbd></td><td>“Add / remove points” mode</td></tr>
+        <tr><td><kbd>Delete</kbd></td><td>Delete the selection or the selected point</td></tr>
+        <tr><td><kbd>Ctrl+Z</kbd></td><td>Undo</td></tr>
+        <tr><td><kbd>Ctrl+Shift+Z</kbd> / <kbd>Ctrl+Y</kbd></td><td>Redo</td></tr>
+        <tr><td><kbd>Ctrl+S</kbd></td><td>Save to file (Ctrl+Shift+S — to a new one)</td></tr>
+        <tr><td><kbd>Ctrl+O</kbd></td><td>Open a file as a new map</td></tr>
+        <tr><td><kbd>Space</kbd> + <kbd>drag</kbd></td><td>Pan the map (like dragging empty space)</td></tr>
+        <tr><td><kbd>Wheel</kbd></td><td>Zoom</td></tr>
+        <tr><td><kbd>C</kbd></td><td>AI changes: before / after</td></tr>
+        <tr><td><kbd>F1</kbd> / <kbd>?</kbd></td><td>This help</td></tr>
+        </table>
+      </section>
     </div>
-    <div class="btns" style="margin-top:14px"><span class="spacer"></span><button class="btn primary" id="helpClose">Зрозуміло</button></div>
+    <div class="helpfoot">
+      <span class="helpnote"><span class="qmark">?</span><span data-lang="uk" data-noi18n>Це меню завжди можна відкрити кнопкою <b>?</b> у правому верхньому куті (або <kbd>F1</kbd>).</span><span data-lang="en">You can always open this menu with the <b>?</b> button in the top-right corner (or <kbd>F1</kbd>).</span></span>
+      <span class="spacer"></span><button class="btn primary" id="helpClose">Зрозуміло</button>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
 
-<script src="js/i18n.js?v=30"></script>
-<script src="js/i18n-en.js?v=30"></script>
-<script src="js/default-map.js?v=30"></script>
-<script src="js/core.js?v=30"></script>
-<script src="js/render.js?v=30"></script>
-<script src="js/nature.js?v=30"></script>
-<script src="js/generators.js?v=30"></script>
-<script src="js/templates.js?v=30"></script>
-<script src="js/library.js?v=30"></script>
-<script src="js/brush.js?v=30"></script>
-<script src="js/ai.js?v=30"></script>
-<script src="js/ui.js?v=30"></script>
+<script src="js/i18n.js?v=33"></script>
+<script src="js/i18n-en.js?v=33"></script>
+<script src="js/default-map.js?v=33"></script>
+<script src="js/core.js?v=33"></script>
+<script src="js/render.js?v=33"></script>
+<script src="js/nature.js?v=33"></script>
+<script src="js/generators.js?v=33"></script>
+<script src="js/templates.js?v=33"></script>
+<script src="js/library.js?v=33"></script>
+<script src="js/brush.js?v=33"></script>
+<script src="js/ai.js?v=33"></script>
+<script src="js/ui.js?v=33"></script>
 </body>
 </html>

@@ -19,7 +19,7 @@ Object.assign(EN, {
   'Узбережжя': 'Coast', 'Море на заході, суша на сході.': 'Sea in the west, land in the east.',
   'Внутрішня провінція': 'Inland province', 'Уся мапа — суша, без моря.': 'The whole map is land, no sea.',
   'Північ Крайтрену': 'Northern Kraitren', 'Стартова мапа кампанії.': 'Starter campaign map.',
-  'Приклад від автора: мапа з D&D-кампанії автора «Уже не ви».': 'Example by the author: a map from the author’s D&D campaign “Uzhe ne vy”.',
+  'Приклад від автора: мапа з D&D-кампанії автора «Уже не ви».': 'Example by the author: a map from the author’s D&D campaign “No Longer You”.',
   'Ваш шаблон': 'Your template', 'Новий напис': 'New label', 'Мапа з файлу': 'Map from file', 'Без назви': 'Untitled',
   // ---------- верхня панель ----------
   'Інструменти': 'Tools', 'Вибір': 'Select', 'Полігон': 'Polygon', 'Овал': 'Ellipse', 'Пензель': 'Brush', 'Крива': 'Curve', 'Штамп': 'Stamp', 'Текст': 'Text',
@@ -120,7 +120,7 @@ Object.assign(EN, {
   'Оберіть шаблон — назву й розмір уточните на наступному кроці.': 'Pick a template — you will set the name and size on the next step.',
   'Мапи зберігаються лише у вашому браузері й ваших файлах.': 'Maps are stored only in your browser and your files.',
   'Приклад від автора': 'Example by the author', 'Мова інтерфейсу': 'Interface language',
-  'Зрозуміло': 'Got it',
+  'Зрозуміло': 'Got it', 'Основи': 'Basics', 'Гарячі клавіші': 'Hotkeys',
 });
 EN_PATTERNS.push(
   [/^Відкрито «(.+)»$/, m => `Opened “${m[1]}”`],
