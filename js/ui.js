@@ -70,7 +70,7 @@ function restore(json){ const selId = selected && selected.id; selObj = null; da
 function undo(){ if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); updateUndo(); }
 function redo(){ if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); updateUndo(); }
 let dirty = false; let draftTimer = null;
-function setStatus(t){ document.getElementById('status').textContent = t; }
+function setStatus(t){ const el = document.getElementById('status'); el.textContent = t; el.title = t; }
 function changed(noRender){ dirty = true; setStatus('Є незбережені зміни'); if (!noRender) scheduleRender(); draw();
   clearTimeout(draftTimer); draftTimer = setTimeout(() => { try { localStorage.setItem(LS_KEY, JSON.stringify({at: Date.now(), json: snapshot()})); } catch (e) {} }, 600); }
 
@@ -258,6 +258,30 @@ function finishPoly(){ if (!drawing) return; const pts = drawing.pts; const min 
   drawing = null; snapMark = null; setTool('select'); renderSide(); draw(); }
 view.addEventListener('wheel', e => { e.preventDefault(); const [sx, sy] = pos(e); const f = Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)); const ns = Math.min(4, Math.max(.08, vs.scale * f));
   autoFit = false; const [wx, wy] = toWorld(sx, sy); vs.scale = ns; vs.ox = sx - wx*ns; vs.oy = sy - wy*ns; draw(); }, {passive: false});
+// ================= map settings dialog =================
+const mapM = document.getElementById('mapModal'), mapBody = document.getElementById('mapBody');
+function renderMapSettings(){
+  const st = data.settings || (data.settings = {}); if (st.wetStreams == null) st.wetStreams = 1; if (st.wetPonds == null) st.wetPonds = 1;
+  let h = `<div class="row"><label for="seedIn">Варіант розкладки (seed)</label><div class="btns" style="flex-wrap:nowrap"><input type="number" id="seedIn" value="${data.seed}"><button class="btn solid" id="seedNew">Інший</button></div></div>`;
+  h += slider('Розсип окремих дерев', 'scatter', 0, 3, .05, st) + slider('Снігові позначки', 'snow', 0, 2, .05, st);
+  const nGen = data.shapes.filter(x => x.gen === 'wet').length;
+  if (nGen) h += `<div class="btns" style="margin-bottom:8px"><button class="btn solid" id="wetClear">Прибрати стару автогенерацію (${nGen})</button></div>`;
+  mapBody.innerHTML = h;
+  mapBody.querySelectorAll('input[type=range]').forEach(inp => {
+    inp.addEventListener('pointerdown', () => pushUndo());
+    inp.addEventListener('keydown', () => { if (!inp._u){ pushUndo(); inp._u = 1; } });
+    inp.addEventListener('input', () => { st[inp.dataset.key] = +inp.value; document.getElementById(inp.id + '_o').textContent = inp.value; changed(); });
+  });
+  const q = id => document.getElementById(id);
+  q('seedIn').addEventListener('change', e => { pushUndo(); data.seed = (+e.target.value) | 0; changed(); });
+  q('seedNew').addEventListener('click', () => { pushUndo(); data.seed = (Math.random()*100000) | 0; changed(); renderMapSettings(); });
+  if (q('wetClear')) q('wetClear').addEventListener('click', () => { pushUndo(); data.shapes = data.shapes.filter(x => x.gen !== 'wet'); if (selected && selected.gen === 'wet') selected = null; changed(); renderSide(); renderMapSettings(); });
+}
+document.getElementById('mapBtn').addEventListener('click', () => { renderMapSettings(); mapM.classList.add('open'); });
+document.getElementById('mapClose').addEventListener('click', () => mapM.classList.remove('open'));
+mapM.addEventListener('click', e => { if (e.target === mapM) mapM.classList.remove('open'); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && mapM.classList.contains('open')){ e.stopImmediatePropagation(); mapM.classList.remove('open'); } }, true);
+
 // ================= help dialog =================
 const helpM = document.getElementById('helpModal');
 function toggleHelp(open){ helpM.classList.toggle('open', open ?? !helpM.classList.contains('open')); if (helpM.classList.contains('open')) { document.getElementById('helpClose').focus({preventScroll: true}); helpM.querySelector('.card').scrollTop = 0; } }
@@ -367,15 +391,8 @@ function renderSide(){
       if (activeVertex >= 0) h += `<div class="btns" style="margin-top:6px"><button class="btn solid" id="vDelActive">Видалити вибрану точку</button></div>`;
     } else h += `<p class="help" style="padding:0;margin-top:10px">Щоб додавати чи видаляти точки, спершу перетворіть овал на полігон.</p>`;
   } else {
-    const st = data.settings || (data.settings = {}); if (st.wetStreams == null) st.wetStreams = 1; if (st.wetPonds == null) st.wetPonds = 1;
-    h += `<h2>Мапа</h2>`;
-    h += `<div class="row"><label for="seedIn">Варіант розкладки (seed)</label><div class="btns" style="flex-wrap:nowrap"><input type="number" id="seedIn" value="${data.seed}"><button class="btn solid" id="seedNew">Інший</button></div></div>`;
-    h += slider('Розсип окремих дерев', 'scatter', 0, 3, .05, st) + slider('Снігові позначки', 'snow', 0, 2, .05, st);
-    const nGen = data.shapes.filter(x => x.gen === 'wet').length;
-    if (nGen) h += `<div class="btns" style="margin-bottom:8px"><button class="btn solid" id="wetClear">Прибрати стару автогенерацію (${nGen})</button></div>`;
     h += `<h2>Контури й вибір</h2><label class="check"><input type="checkbox" id="outChk" ${showOutlines ? 'checked' : ''}> Показувати контури</label>`;
     h += `<div class="vis">` + ['land','lake','mountain','forest','marsh','river','road','rail','path','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('') + `</div>`;
-    h += `<p class="help" style="padding:0;margin-top:10px">Як користуватися — кнопка <b>?</b> угорі або <kbd>F1</kbd>.</p>`;
   }
   side.innerHTML = h;
   side.querySelectorAll('input[type=range]').forEach(inp => {
@@ -404,12 +421,9 @@ function renderSide(){
   if (q('lineClear')) q('lineClear').addEventListener('change', e => { pushUndo(); selected.clear = e.target.checked; changed(); });
   if (q('routeSel')) q('routeSel').addEventListener('change', e => { pushUndo(); selected.kind = e.target.value; changed(); renderSide(); });
   if (q('taperChk')) q('taperChk').addEventListener('change', e => { pushUndo(); selected.taper = e.target.checked; changed(); });
-  if (q('seedIn')) q('seedIn').addEventListener('change', e => { pushUndo(); data.seed = (+e.target.value) | 0; changed(); });
-  if (q('seedNew')) q('seedNew').addEventListener('click', () => { pushUndo(); data.seed = (Math.random()*100000) | 0; changed(); renderSide(); });
   side.querySelectorAll('[data-gen]').forEach(b => b.addEventListener('click', () => { const t = b.dataset.gen, rs = selected; pushUndo(); busy.textContent = 'Генерую…'; busy.style.display = 'block';
     setTimeout(() => { let n = 0; try { n = (t === 'stream' ? genStreams : t === 'pond' ? genPonds : genMarsh)(rs, (Math.random()*1e6)|0); } catch (e) { console.error(e); } selected = rs; busy.textContent = 'Перемальовую…'; changed(); renderSide(); toast(n ? 'Згенеровано: ' + n : 'Нічого не вийшло — спробуйте більшу область або вищу густоту'); }, 30); }));
   side.querySelectorAll('[data-clr]').forEach(b => b.addEventListener('click', () => { pushUndo(); const rs = selected; clearGen(rs, b.dataset.clr); selected = rs; changed(); renderSide(); }));
-  if (q('wetClear')) q('wetClear').addEventListener('click', () => { pushUndo(); data.shapes = data.shapes.filter(x => x.gen !== 'wet'); if (selected && selected.gen === 'wet') selected = null; changed(); renderSide(); });
   if (q('outChk')) q('outChk').addEventListener('change', e => { showOutlines = e.target.checked; if (!showOutlines){ selected = null; activeVertex = -1; vmode = null; } draw(); });
   side.querySelectorAll('[data-vis]').forEach(c => c.addEventListener('change', () => { const k = c.dataset.vis; visibleKinds[k] = c.checked; if (!c.checked){ if (selected && selected.kind === k){ selected = null; activeVertex = -1; vmode = null; } if (selObj && selObj.type === k){ selObj = null; } } draw(); }));
 }

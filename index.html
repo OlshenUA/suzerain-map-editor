@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Kurale&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ruslan+Display&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=4">
 </head>
 <body>
 <div class="app">
@@ -43,6 +43,7 @@
     </div>
     <div class="spacer"></div>
     <span class="status" id="status">Завантаження…</span>
+    <button class="btn solid" id="mapBtn" title="Seed, розсип дерев, снігові позначки">Мапа</button>
     <button class="btn solid" id="fit">Вся мапа</button>
     <button class="btn solid" id="newBtn">Нова</button>
     <button class="btn solid" id="openBtn" title="Ctrl+O">Відкрити</button>
@@ -95,6 +96,13 @@
     <div class="btns"><span class="spacer"></span><button class="btn solid" id="confirmNo">Скасувати</button><button class="btn primary" id="confirmYes">Так</button></div>
   </div>
 </div>
+<div class="modal" id="mapModal" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+  <div class="card" style="max-width:420px">
+    <h3 id="mapTitle">Налаштування мапи</h3>
+    <div id="mapBody"></div>
+    <div class="btns" style="margin-top:10px"><span class="spacer"></span><button class="btn primary" id="mapClose">Готово</button></div>
+  </div>
+</div>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
   <div class="card wide">
     <h3 id="helpTitle">Як користуватися редактором</h3>
@@ -133,10 +141,10 @@
 <div class="toast" id="toast" role="status"></div>
 
 
-<script src="js/default-map.js"></script>
-<script src="js/core.js"></script>
-<script src="js/render.js"></script>
-<script src="js/generators.js"></script>
-<script src="js/ui.js"></script>
+<script src="js/default-map.js?v=4"></script>
+<script src="js/core.js?v=4"></script>
+<script src="js/render.js?v=4"></script>
+<script src="js/generators.js?v=4"></script>
+<script src="js/ui.js?v=4"></script>
 </body>
 </html>
