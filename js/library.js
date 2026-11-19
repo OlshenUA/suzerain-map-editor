@@ -49,8 +49,8 @@ function createMap(d){ saveCurrent(); const id = newMapId(); if (!libPut(id, d))
 function mapFingerprint(d){ const sh = (d && d.shapes) || []; const s = JSON.stringify(sh.map(x => [x.kind, x.pts || [x.cx, x.cy, x.rx, x.ry]]));
   let h = 5381; for (let i = 0; i < s.length; i++) h = (Math.imul(h, 33) ^ s.charCodeAt(i)) >>> 0; return sh.length + ':' + h.toString(36); }
 // Старі стартові мапи, які без змін слід оновити до поточної DEFAULT_MAP (відредаговані не чіпаємо).
-const OLD_STARTERS = ['91:1ip0n2x'];
-const MIGR_STARTER = LIB + 'migr:starter-2';
+const OLD_STARTERS = ['91:1ip0n2x', '180:12cvyu5', '181:5odp2e']; // 1-а стартова; Крайтрен лише з природою (до й після міграції v2, сніг на всю мапу)
+const MIGR_STARTER = LIB + 'migr:starter-3';
 function upgradeStarterMaps(){
   if (lsGet(MIGR_STARTER)) return; let n = 0;
   for (const e of libList()){ const d = libGet(e.id); if (!d || !OLD_STARTERS.includes(mapFingerprint(d))) continue;
