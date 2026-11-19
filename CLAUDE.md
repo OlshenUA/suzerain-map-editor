@@ -55,6 +55,7 @@
 ## Важливі нюанси
 
 - **Бібліотека мап** (`library.js`) у `localStorage`: `suzerain-maps-v1:index` (список `{id,name,W,H,created,updated}`), `…:map:<id>` (JSON мапи), `…:thumb:<id>` (JPEG-мініатюра), `…:current`, `…:templates` (шаблони користувача). `changed()` → `scheduleSave()` → `saveCurrent()`. Назва мапи — `data.name`; `restore()` (undo) її не чіпає. Старе автозбереження `LS_KEY` при першому запуску імпортується як перша мапа.
+  Якщо змінюєш `DEFAULT_MAP`, додай відбиток старої (`mapFingerprint`) в `OLD_STARTERS` і зміни ключ `MIGR_STARTER` — тоді незмінені старі стартові мапи в браузерах оновляться один раз, а відредаговані залишаться.
 - Файли: `saveFile()` — копія в `.json` (File System Access API у Chromium, інакше завантаження); `openFile()` відкриває файл як нову мапу в бібліотеці.
 - Межі мапи: `shiftData(d, dx, dy)` зсуває всі координати (фігури, штампи, тексти, `exportRect`). Діалог «Межі» не модальний (`.modal.dock`), прев’ю малює `drawBoundsPreview()` у `draw()`.
 - Шаблони нової мапи — `js/templates.js`: або `make(W,H)`, або готова `data` (при іншому розмірі розширюється/обрізається від центру).

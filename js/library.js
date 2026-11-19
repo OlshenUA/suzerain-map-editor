@@ -45,11 +45,23 @@ function loadMapData(d, id){
 function openMap(id){ if (id === currentMapId) return true; const d = libGet(id); if (!d || !Array.isArray(d.shapes)){ toast('Не вдалося прочитати цю мапу'); return false; }
   saveCurrent(); loadMapData(d, id); toast('Відкрито «' + mapName(d) + '»'); return true; }
 function createMap(d){ saveCurrent(); const id = newMapId(); if (!libPut(id, d)) return false; loadMapData(d, id); return true; }
+// Відбиток геометрії мапи (типи й точки фігур) — щоб упізнати незмінену стару стартову мапу.
+function mapFingerprint(d){ const sh = (d && d.shapes) || []; const s = JSON.stringify(sh.map(x => [x.kind, x.pts || [x.cx, x.cy, x.rx, x.ry]]));
+  let h = 5381; for (let i = 0; i < s.length; i++) h = (Math.imul(h, 33) ^ s.charCodeAt(i)) >>> 0; return sh.length + ':' + h.toString(36); }
+// Старі стартові мапи, які без змін слід оновити до поточної DEFAULT_MAP (відредаговані не чіпаємо).
+const OLD_STARTERS = ['91:1ip0n2x'];
+const MIGR_STARTER = LIB + 'migr:starter-2';
+function upgradeStarterMaps(){
+  if (lsGet(MIGR_STARTER)) return; let n = 0;
+  for (const e of libList()){ const d = libGet(e.id); if (!d || !OLD_STARTERS.includes(mapFingerprint(d))) continue;
+    const nd = JSON.parse(DEFAULT_JSON); nd.name = mapName(d); if (libPut(e.id, nd)){ lsDel(thumbKey(e.id)); n++; } }
+  lsSet(MIGR_STARTER, '1'); if (n) toast('Стартову мапу оновлено до нової версії Крайтрену'); }
 function initLibrary(){
+  upgradeStarterMaps();
   let list = libList();
   if (!list.length){ // перший запуск або перехід із версії, де була одна мапа в автозбереженні
     let d = null; try { const old = JSON.parse(lsGet(LS_KEY) || 'null'); if (old && old.json) d = JSON.parse(old.json); } catch (e) {}
-    if (!d || !Array.isArray(d.shapes)) d = JSON.parse(DEFAULT_JSON);
+    if (!d || !Array.isArray(d.shapes) || OLD_STARTERS.includes(mapFingerprint(d))) d = JSON.parse(DEFAULT_JSON);
     if (!d.name) d.name = 'Північ Крайтрену';
     const id = newMapId(); libPut(id, d); lsSet(LIB_CUR, id); list = libList();
     if (!list.length){ data.name = d.name; currentMapId = null; updateTitle(); fit(); scheduleRender(0); renderSide(); return; } // сховище недоступне
