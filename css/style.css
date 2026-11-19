@@ -39,6 +39,9 @@ button,select,input{font:inherit;color:inherit}
 .optlist{display:flex;flex-direction:column;gap:2px}
 .optlist .btn{display:flex;align-items:center;gap:8px;text-align:left;white-space:normal;min-height:34px}
 .optlist .dot{flex:0 0 auto}
+.optsub{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:10px 4px 2px}
+.seg{display:flex;gap:2px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:2px;margin-bottom:10px}
+.seg .btn{flex:1;justify-content:center}
 /* вузькі екрани: мапа зверху, панель знизу */
 @media (max-width:899px){
   .app{height:100dvh}

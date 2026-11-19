@@ -45,7 +45,7 @@ function cellXY(i){ return [(i % FW + .5) * FS, (((i / FW) | 0) + .5) * FS]; }
 function genTag(rs, t){ return 'r:' + rs.id + ':' + t; }
 function clearGen(rs, t){ const tag = genTag(rs, t); data.shapes = data.shapes.filter(x => x.gen !== tag); if (selected && selected.gen === tag) selected = null; }
 function insertShapes(arr){ const firstNonLand = data.shapes.findIndex(x => x.kind !== 'land' && x.kind !== 'lake');
-  const lakes = arr.filter(o => o.kind === 'lake'), zones = arr.filter(o => o.kind === 'marsh'), rivers = arr.filter(o => o.kind === 'river');
+  const lakes = arr.filter(o => o.kind === 'lake'), zones = arr.filter(o => o.kind === 'terrain'), rivers = arr.filter(o => o.kind === 'river');
   data.shapes.splice(firstNonLand < 0 ? data.shapes.length : firstNonLand, 0, ...lakes, ...zones); data.shapes.push(...rivers); for (const o of arr) o.id = 's' + (uid++); }
 
 function genStreams(rs, seed){
@@ -99,7 +99,7 @@ function genMarsh(rs, seed){
     for (let k = 0; k < n; k++){ const a = k/n*Math.PI*2; let rr = r * (.6 + .7*fbm(Math.cos(a)*1.6 + ph, Math.sin(a)*1.6, 9)); let px, py;
       for (let s = 0; s < 8; s++){ const ex = Math.cos(a)*rr*el, ey = Math.sin(a)*rr; px = x + ex*Math.cos(ang) - ey*Math.sin(ang); py = y + ex*Math.sin(ang) + ey*Math.cos(ang); if (inside(rs, px, py)) break; rr *= .75; }
       ps.push([Math.round(px), Math.round(py)]); }
-    out.push({kind: 'marsh', shape: 'poly', pts: ps, density: 1, gen: tag}); }
+    out.push({kind: 'terrain', terrain: 'marsh', shape: 'poly', pts: ps, density: 1, gen: tag}); }
   insertShapes(out); return out.length;
 }
 

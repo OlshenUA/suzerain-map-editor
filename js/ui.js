@@ -12,7 +12,7 @@ let vmode = null; let ghost = null; let hoverV = -1;
 let selObj = null;
 // autoFit: поки користувач не рухав вигляд, мапа вписується заново при зміні розміру сцени
 let showOutlines = true; let selected = null; let activeVertex = -1; let drawing = null; let hover = null;
-const visibleKinds = {land: true, lake: true, mountain: true, forest: true, marsh: true, river: true, region: true, vill: true, town: true, fort: true, road: true, rail: true, path: true, stain: true, stamp: true, text: true};
+const visibleKinds = {land: true, lake: true, mountain: true, forest: true, marsh: true, terrain: true, river: true, region: true, vill: true, town: true, fort: true, road: true, rail: true, path: true, stain: true, stamp: true, text: true};
 function draw(){
   const g = vctx; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, view.width, view.height);
   g.setTransform(dpr*vs.scale, 0, 0, dpr*vs.scale, dpr*vs.ox, dpr*vs.oy);
@@ -22,6 +22,7 @@ function draw(){
   if (showOutlines) for (const s of data.shapes){ if (!visibleKinds[s.kind]) continue; if (s === selected) continue; outline(g, s, px, false); }
   if (selected){ outline(g, selected, px, true); drawGhost(g, px); }
   drawDecor(g);
+  drawBrushPreview(g, px);
   drawBoundsPreview(g, px);
   if (selObj){ const b = selObj.type === 'text' ? [selObj.o.x, selObj.o.y, selObj.o.x + selObj.o.w, selObj.o.y + selObj.o.h] : stampBox(selObj.o);
     g.setLineDash([6*px, 4*px]); g.strokeStyle = '#d39a4a'; g.lineWidth = 1.8*px; g.strokeRect(b[0], b[1], b[2]-b[0], b[3]-b[1]); g.setLineDash([]);
@@ -37,7 +38,7 @@ function draw(){
     g.setLineDash([]); }
 }
 function outline(g, s, px, sel){
-  const col = s.kind === 'stain' ? (s.color || KIND_COLOR.stain) : KIND_COLOR[s.kind]; const pts = shapePts(s); const closed = s.shape !== 'line';
+  const col = shapeColor(s); const pts = shapePts(s); const closed = s.shape !== 'line';
   g.lineJoin = 'round';
   if (sel){ g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = 4.5*px; g.stroke(pathOf(pts, closed)); }
   g.strokeStyle = col; g.lineWidth = (sel ? 2.4 : 1.4)*px; g.globalAlpha = sel ? 1 : (s.kind === 'land' ? .45 : .8);
@@ -104,33 +105,41 @@ window.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.
 
 // ================= tools / interaction =================
 // «Крива» малює річку, дорогу, залізницю чи пунктирний шлях — вид обирається в лівій панелі опцій.
-let tool = 'select', newKind = 'mountain', newStamp = 'house', newCurve = 'river';
+let tool = 'select', newKind = 'mountain', newStamp = 'house', newCurve = 'river', newTerrain = 'steppe', newTrees = 'conifer';
 document.getElementById('curveBar').addEventListener('click', e => { const b = e.target.closest('[data-curve]'); if (!b) return; newCurve = b.dataset.curve; for (const c of document.getElementById('curveBar').children) c.setAttribute('aria-pressed', String(c.dataset.curve === newCurve)); });
 // кольорові позначки, як у контурів на мапі
-for (const b of document.querySelectorAll('#kinds [data-kind], #curveBar [data-curve]')){ const k = b.dataset.kind || b.dataset.curve; b.insertAdjacentHTML('afterbegin', `<span class="dot" style="background:${KIND_COLOR[k]}"></span>`); }
+for (const b of document.querySelectorAll('#kinds [data-kind], #curveBar [data-curve]')){ const k = b.dataset.kind || b.dataset.curve; const col = b.dataset.terrain ? TERRAINS[b.dataset.terrain].color : KIND_COLOR[k]; b.insertAdjacentHTML('afterbegin', `<span class="dot" style="background:${col}"></span>`); }
+view.addEventListener('pointerleave', () => { if (brushCursor && !brushStroke){ brushCursor = null; draw(); } });
 (function(){ const sb = document.getElementById('stampsBar'); sb.innerHTML = Object.entries(STAMPS).map(([k, v]) => `<button class="btn" data-stamp="${k}" aria-pressed="${k === 'house'}">${v.name}</button>`).join('');
   sb.addEventListener('click', e => { const b = e.target.closest('[data-stamp]'); if (!b) return; newStamp = b.dataset.stamp; for (const c of sb.children) c.setAttribute('aria-pressed', String(c.dataset.stamp === newStamp)); }); })();
 const toolsEl = document.getElementById('tools'), kindsEl = document.getElementById('kinds');
-const OPTS_TITLE = {poly: 'Що малювати', ellipse: 'Що малювати', curve: 'Вид кривої', stamp: 'Штамп'};
+const OPTS_TITLE = {poly: 'Що малювати', ellipse: 'Що малювати', brush: 'Пензель', curve: 'Вид кривої', stamp: 'Штамп'};
 // Ліва панель: опції активного інструмента та/або налаштування вибраного об'єкта.
 function updateLeftPanel(){ const opts = document.getElementById('opts'), to = document.getElementById('toolOpts'); const hasTool = !!OPTS_TITLE[tool], hasObj = !!(selected || selObj);
   to.hidden = !hasTool; objPanel.hidden = !hasObj; opts.hidden = !hasTool && !hasObj;
-  if (hasTool){ document.getElementById('optsTitle').textContent = OPTS_TITLE[tool]; for (const l of opts.querySelectorAll('.optlist')) l.hidden = !l.dataset.for.split(' ').includes(tool); } }
+  if (hasTool){ document.getElementById('optsTitle').textContent = OPTS_TITLE[tool]; for (const l of opts.querySelectorAll('.optlist')) l.hidden = !l.dataset.for.split(' ').includes(tool); const tb = document.getElementById('treeBar'); if (newKind !== 'forest') tb.hidden = true; } }
 function setTool(t){ tool = t; drawing = null; for (const b of toolsEl.children) b.setAttribute('aria-pressed', String(b.dataset.tool === t));
-  updateLeftPanel();
+  updateLeftPanel(); if (t !== 'brush'){ brushCursor = null; brushStroke = null; } else renderBrushOpts();
   view.style.cursor = t === 'select' ? 'default' : 'crosshair'; draw(); }
-function setKind(k){ newKind = k; for (const b of kindsEl.children) b.setAttribute('aria-pressed', String(b.dataset.kind === k)); }
+function setKind(k, t){ newKind = k; if (k === 'terrain' && t) newTerrain = t;
+  for (const b of kindsEl.querySelectorAll('[data-kind]')) b.setAttribute('aria-pressed', String(b.dataset.kind === k && (k !== 'terrain' || b.dataset.terrain === newTerrain)));
+  updateLeftPanel(); draw(); }
 toolsEl.addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
-kindsEl.addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) setKind(b.dataset.kind); });
+kindsEl.addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) setKind(b.dataset.kind, b.dataset.terrain); });
+document.getElementById('treeSel').innerHTML = Object.entries(TREE_TYPES).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('');
+document.getElementById('treeSel').addEventListener('change', e => { newTrees = e.target.value; });
+document.getElementById('brushBar').addEventListener('click', e => { const b = e.target.closest('[data-bmode]'); if (b) setBrushErase(b.dataset.bmode === 'erase'); });
 
-const HIT_ORDER = ['road', 'rail', 'path', 'river', 'fort', 'town', 'vill', 'mountain', 'marsh', 'forest', 'stain', 'lake', 'region', 'land'];
+function shapeArea(s){ return s.shape === 'ellipse' ? Math.PI * s.rx * s.ry : polyArea(s.pts); }
 function hitShape(x, y){ const tol = 8 / vs.scale; if (!showOutlines) return null;
-  for (const k of HIT_ORDER){ if (!visibleKinds[k]) continue; const list = data.shapes.filter(s => s.kind === k);
+  for (const k of ['road', 'rail', 'path', 'river']){ if (!visibleKinds[k]) continue; const list = data.shapes.filter(s => s.kind === k);
     for (let i = list.length - 1; i >= 0; i--){ const s = list[i];
       if (k === 'river'){ if (polyEdgeDist(x, y, s.pts, false) < Math.max(tol, (s.width||3)/2 + 3)) return s; }
-      else if (ROUTE_KINDS.includes(k)){ if (polyEdgeDist(x, y, s.pts, false) < Math.max(tol, 5)) return s; }
-      else if (inside(s, x, y)) return s; } }
-  return null; }
+      else if (polyEdgeDist(x, y, s.pts, false) < Math.max(tol, 5)) return s; } }
+  // площинні: найменша фігура, що містить точку
+  let best = null, ba = Infinity;
+  for (const s of data.shapes){ if (isLineKind(s.kind) || !visibleKinds[s.kind] || !inside(s, x, y)) continue; const a = shapeArea(s); if (a <= ba){ best = s; ba = a; } }
+  return best; }
 function hitVertex(s, x, y){ const tol = 9 / vs.scale;
   if (s.shape === 'ellipse'){ const hs = ellipseHandles(s); for (let i = hs.length - 1; i >= 0; i--) if (Math.hypot(hs[i][0] - x, hs[i][1] - y) < tol) return i; return -1; }
   let best = -1, bd = tol; for (let i = 0; i < s.pts.length; i++){ const d = Math.hypot(s.pts[i][0] - x, s.pts[i][1] - y); if (d < bd){ bd = d; best = i; } } return best; }
@@ -201,6 +210,7 @@ view.addEventListener('pointerdown', e => {
   if (tool === 'text'){ drawing = {type: 'textbox', x0: x, y0: y, b: null}; drag = {type: 'textbox'}; return; }
   if (tool === 'exrect'){ drawing = {type: 'exrect', x0: x, y0: y, b: null}; drag = {type: 'exrect'}; return; }
   if (tool === 'ellipse'){ drawing = {type: 'ellipse', kind: newKind, x0: x, y0: y, e: null}; drag = {type: 'ellipse'}; return; }
+  if (tool === 'brush' && e.button === 0){ brushStroke = {pts: [[x, y]], r: brushOpts.size / 2, erase: brushOpts.erase || e.altKey}; drag = {type: 'brush'}; draw(); return; }
   if (tool === 'poly' || tool === 'curve'){
     if (!drawing) drawing = {type: 'poly', kind: tool === 'curve' ? newCurve : newKind, pts: []};
     const last = drawing.pts[drawing.pts.length - 1];
@@ -215,6 +225,7 @@ view.addEventListener('pointermove', e => {
     if (ng || ghost || nh !== hoverV){ ghost = ng; hoverV = nh; if (!ng) snapMark = null; draw(); } }
   if (drawing && drawing.type === 'poly'){ drawing.cursor = isLineKind(drawing.kind) ? snapLinePoint(drawing.kind, x, y, null, e.shiftKey) : [x, y]; draw(); }
   else if (tool === 'curve' && !drag){ snapLinePoint(newCurve, x, y, null, e.shiftKey); draw(); }
+  if (tool === 'brush'){ brushCursor = [x, y]; if (drag && drag.type === 'brush' && brushStroke){ const l = brushStroke.pts[brushStroke.pts.length - 1]; if (Math.hypot(x - l[0], y - l[1]) > Math.max(1.5 / vs.scale, brushStroke.r * .15)) brushStroke.pts.push([x, y]); } if (!drag || drag.type === 'brush'){ draw(); if (drag) return; } }
   if (!drag) return;
   if (drag.type === 'pan'){ autoFit = false; vs.ox = drag.ox + (sx - drag.sx); vs.oy = drag.oy + (sy - drag.sy); if (Math.abs(sx - drag.sx) + Math.abs(sy - drag.sy) > 3) drag.moved = true; draw(); return; }
   if (drag.type === 'objmove'){ selObj.o.x = Math.round(drag.ox + x - drag.x0); selObj.o.y = Math.round(drag.oy + y - drag.y0); drag.dirty = true; draw(); return; }
@@ -234,6 +245,7 @@ view.addEventListener('pointermove', e => {
 });
 view.addEventListener('pointerup', e => {
   if (!drag) return; const d = drag; drag = null; snapMark = null;
+  if (d.type === 'brush'){ const st = brushStroke; brushStroke = null; brushCommit(st); draw(); return; }
   if (d.type === 'pan' && !d.moved && tool === 'select'){ /* click on empty selects nothing */ const [sx, sy] = pos(e); const [x, y] = toWorld(sx, sy); const h = hitShape(x, y); if (!h && (selected || selObj) && !vmode){ selected = null; selObj = null; activeVertex = -1; renderSide(); draw(); } }
   if (d.type === 'exrect'){ const b = drawing && drawing.b; if (b && b[2] > 20 && b[3] > 20){ data.exportRect = {x: Math.round(b[0]), y: Math.round(b[1]), w: Math.round(b[2]), h: Math.round(b[3])}; changed(true); } drawing = null; setTool('select'); openExport(true); return; }
   if (d.type === 'textbox'){ let b = drawing && drawing.b; if (!b || b[2] < 30 / vs.scale || b[3] < 15 / vs.scale) b = [drawing.x0 - 180, drawing.y0 - 40, 360, 80];
@@ -252,7 +264,7 @@ view.addEventListener('dblclick', e => {
     if (best >= 0){ pushUndo(); pts.splice(best + 1, 0, [Math.round(x*10)/10, Math.round(y*10)/10]); activeVertex = best + 1; changed(); } }
 });
 function roundE(e){ return {cx: Math.round(e.cx), cy: Math.round(e.cy), rx: Math.round(e.rx), ry: Math.round(e.ry), rot: e.rot || 0}; }
-function defaultsFor(k){ if (k === 'mountain') return {min: 28, max: 90, density: 1}; if (k === 'forest') return {tree: 11, density: 1}; if (k === 'marsh') return {density: 1}; if (k === 'road' || k === 'rail' || k === 'path') return {width: 1}; if (k === 'stain') return {color: lastStainColor, opacity: .45, blur: 8, rough: 1.2, edge: .5, grain: .4, drops: 6}; if (k === 'vill') return {density: 1, fields: 1}; if (k === 'town') return {density: 1, wall: 5}; if (k === 'fort') return {density: 1, wall: 7}; if (k === 'region') return {streams: 1, ponds: 1, marsh: 1, pull: 1}; if (k === 'river') return {width: lastRiverWidth}; return {}; }
+function defaultsFor(k){ if (k === 'mountain') return {min: 28, max: 90, density: 1}; if (k === 'forest') return {tree: 11, density: 1, trees: newTrees}; if (k === 'terrain') return {terrain: newTerrain, density: 1}; if (k === 'marsh') return {density: 1}; if (k === 'road' || k === 'rail' || k === 'path') return {width: 1}; if (k === 'stain') return {color: lastStainColor, opacity: .45, blur: 8, rough: 1.2, edge: .5, grain: .4, drops: 6}; if (k === 'vill') return {density: 1, fields: 1}; if (k === 'town') return {density: 1, wall: 5}; if (k === 'fort') return {density: 1, wall: 7}; if (k === 'region') return {streams: 1, ponds: 1, marsh: 1, pull: 1}; if (k === 'river') return {width: lastRiverWidth}; return {}; }
 let lastRiverWidth = 3; let lastStainColor = '#2f6b3a';
 function finishPoly(){ if (!drawing) return; const pts = drawing.pts; const min = isLineKind(drawing.kind) ? 2 : 3;
   // dblclick adds duplicate points: drop near-duplicates
@@ -267,7 +279,8 @@ function renderMapSettings(){ const mapBody = document.getElementById('mapBody')
   let h = `<div class="row"><label for="mapName">Назва</label><input type="text" id="mapName" class="txt" maxlength="120" value="${esc(mapName(data))}"></div>`;
   h += `<div class="row"><label>Розмір <output>${W} × ${H}</output></label><div class="btns"><button class="btn solid" id="boundsBtn">Змінити межі…</button></div></div>`;
   h += `<div class="row"><label for="seedIn">Варіант розкладки (seed)</label><div class="btns" style="flex-wrap:nowrap"><input type="number" id="seedIn" value="${data.seed}"><button class="btn solid" id="seedNew">Інший</button></div></div>`;
-  h += slider('Розсип окремих дерев', 'scatter', 0, 3, .05, st) + slider('Снігові позначки', 'snow', 0, 2, .05, st);
+  h += slider('Розсип окремих дерев', 'scatter', 0, 3, .05, st);
+  h += `<div class="row"><label for="scatterTrees">Вид окремих дерев</label><select id="scatterTrees">${Object.entries(TREE_TYPES).map(([k, v]) => `<option value="${k}" ${k === (st.scatterTrees || 'conifer') ? 'selected' : ''}>${v.name}</option>`).join('')}</select></div>`;
   const nGen = data.shapes.filter(x => x.gen === 'wet').length;
   if (nGen) h += `<div class="btns" style="margin-bottom:8px"><button class="btn solid" id="wetClear">Прибрати стару автогенерацію (${nGen})</button></div>`;
   mapBody.innerHTML = h;
@@ -276,6 +289,7 @@ function renderMapSettings(){ const mapBody = document.getElementById('mapBody')
   q('mapName').addEventListener('change', e => renameMap(currentMapId, e.target.value));
   q('mapName').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
   q('boundsBtn').addEventListener('click', openBounds);
+  q('scatterTrees').addEventListener('change', e => { pushUndo(); st.scatterTrees = e.target.value; changed(); });
   q('seedIn').addEventListener('change', e => { pushUndo(); data.seed = (+e.target.value) | 0; changed(); });
   q('seedNew').addEventListener('click', () => { pushUndo(); data.seed = (Math.random()*100000) | 0; changed(); renderMapSettings(); });
   if (q('wetClear')) q('wetClear').addEventListener('click', () => { pushUndo(); data.shapes = data.shapes.filter(x => x.gen !== 'wet'); if (selected && selected.gen === 'wet') selected = null; changed(); renderSide(); });
@@ -305,7 +319,8 @@ window.addEventListener('keydown', e => {
     if (activeVertex >= 0 && selected.shape !== 'ellipse' && selected.pts.length > (selected.shape === 'line' ? 2 : 3)){ pushUndo(); selected.pts.splice(activeVertex, 1); activeVertex = -1; changed(); }
     else deleteSelected(); }
   if (selected && selected.shape !== 'ellipse' && !e.ctrlKey && !e.metaKey){ if (e.key === '+' || e.key === '=' || e.key.toLowerCase() === 'a'){ setVmode('add'); return; } if (e.key === '-' || e.key.toLowerCase() === 'x'){ setVmode('remove'); return; } }
-  if (!e.ctrlKey && !e.metaKey){ const m = {v: 'select', p: 'poly', o: 'ellipse', r: 'curve', s: 'stamp', t: 'text', d: 'curve'}[e.key.toLowerCase()]; if (m && !drawing) setTool(m); }
+  if (!e.ctrlKey && !e.metaKey){ if (tool === 'brush' && (e.key === '[' || e.key === ']')){ brushOpts.size = Math.max(10, Math.min(600, Math.round(brushOpts.size * (e.key === ']' ? 1.2 : 1 / 1.2)))); renderBrushOpts(); draw(); }
+    const m = {v: 'select', p: 'poly', o: 'ellipse', r: 'curve', s: 'stamp', t: 'text', d: 'curve', b: 'brush'}[e.key.toLowerCase()]; if (m && !drawing) setTool(m); }
 });
 window.addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; if (e.key === 'Alt' && ghost && vmode !== 'add'){ ghost = null; snapMark = null; draw(); } });
 function deleteSelected(){ if (selObj){ pushUndo(); const o = selObj.o; data.stamps = data.stamps.filter(x => x !== o); data.texts = data.texts.filter(x => x !== o); selObj = null; changed(); renderSide(); return; } if (!selected) return; vmode = null; ghost = null; pushUndo(); data.shapes = data.shapes.filter(s => s !== selected); selected = null; activeVertex = -1; changed(); renderSide(); }
@@ -316,14 +331,14 @@ const sidePanel = document.getElementById('side'), objPanel = document.getElemen
 function slider(label, key, min, max, step, obj, onSet){ const id = 'f_' + key; const v = obj[key];
   return `<div class="row"><label for="${id}">${label} <input type="text" inputmode="decimal" class="num" id="${id}_o" data-min="${min}" data-max="${max}" value="${v}" aria-label="${label}, число"></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${v}" data-key="${key}"></div>`; }
 // Прив'язати всі повзунки в root до об'єкта obj; after(v) — що зробити після зміни (зазвичай changed()).
-function bindSliders(root, obj, after){
+function bindSliders(root, obj, after, noUndo){ const undo = noUndo ? () => {} : pushUndo;
   root.querySelectorAll('input[type=range]').forEach(inp => { const box = document.getElementById(inp.id + '_o'); const key = inp.dataset.key;
-    inp.addEventListener('pointerdown', () => pushUndo());
-    inp.addEventListener('keydown', () => { if (!inp._u){ pushUndo(); inp._u = 1; } });
+    inp.addEventListener('pointerdown', () => undo());
+    inp.addEventListener('keydown', () => { if (!inp._u){ undo(); inp._u = 1; } });
     inp.addEventListener('input', () => { obj[key] = +inp.value; if (box) box.value = inp.value; after(+inp.value); });
     if (box){ box.addEventListener('keydown', e => { if (e.key === 'Enter') box.blur(); });
       box.addEventListener('change', () => { let v = parseFloat(String(box.value).replace(',', '.')); if (!isFinite(v)){ box.value = obj[key]; return; }
-        v = Math.min(+inp.max, Math.max(+inp.min, v)); box.value = v; if (v === obj[key]) return; pushUndo(); obj[key] = v; inp.value = v; after(v); }); } }); }
+        v = Math.min(+inp.max, Math.max(+inp.min, v)); box.value = v; if (v === obj[key]) return; undo(); obj[key] = v; inp.value = v; after(v); }); } }); }
 function renderDecorSide(side){
   const so = selObj, o = so.o; let h = '';
   if (so.type === 'stamp'){
@@ -368,12 +383,12 @@ function renderSide(){
 function renderPanel(side){
   if (selObj){ renderDecorSide(side); return; }
   let h = '';
-  if (selected){ const s = selected; h += `<div class="kindtag"><span class="dot" style="background:${KIND_COLOR[s.kind]}"></span>${KIND_NAME[s.kind]}${s.shape === 'ellipse' ? ' · овал' : s.shape === 'poly' ? ' · полігон' : ''}</div>`;
+  if (selected){ const s = selected; h += `<div class="kindtag"><span class="dot" style="background:${shapeColor(s)}"></span>${s.kind === 'terrain' ? 'Ландшафт · ' + TERRAINS[terrainOf(s)].name : KIND_NAME[s.kind]}${s.shape === 'ellipse' ? ' · овал' : s.shape === 'poly' ? ' · полігон' : ''}</div>`;
     if (s.shape === 'line') h += `<label class="check"><input type="checkbox" id="lineClear" ${s.clear !== false ? 'checked' : ''}> Прибирати дерева, гори й сніг уздовж</label>`;
     if (ROUTE_KINDS.includes(s.kind)){ h += `<div class="row"><label for="routeSel">Вид</label><select id="routeSel">${ROUTE_KINDS.map(k => `<option value="${k}" ${k === s.kind ? 'selected' : ''}>${KIND_NAME[k]}</option>`).join('')}</select></div>` + slider('Товщина', 'width', .4, 3, .05, s); }
-    if (s.shape !== 'line'){ h += `<div class="row"><label for="kindSel">Тип зони</label><select id="kindSel">${['land','lake','mountain','forest','marsh','stain','vill','town','fort','region'].map(k => `<option value="${k}" ${k === s.kind ? 'selected' : ''}>${KIND_NAME[k]}</option>`).join('')}</select></div>`; }
+    if (s.shape !== 'line'){ h += `<div class="row"><label for="kindSel">Тип зони</label><select id="kindSel">${['land','lake','mountain','forest','terrain','stain','vill','town','fort','region'].map(k => `<option value="${k}" ${k === s.kind ? 'selected' : ''}>${KIND_NAME[k]}</option>`).join('')}</select></div>`; }
     if (s.kind === 'mountain'){ h += slider('Найменші гори', 'min', 12, 80, 1, s) + slider('Найбільші гори', 'max', 20, 160, 1, s) + slider('Щільність', 'density', .2, 2, .05, s); }
-    if (s.kind === 'forest'){ h += slider('Розмір дерев', 'tree', 6, 24, .5, s) + slider('Щільність', 'density', .1, 2, .05, s); }
+    if (s.kind === 'forest'){ h += `<div class="row"><label for="treesSel">Дерева</label><select id="treesSel">${Object.entries(TREE_TYPES).map(([k, v]) => `<option value="${k}" ${k === treesOf(s) ? 'selected' : ''}>${v.name}</option>`).join('')}</select></div>` + slider('Розмір дерев', 'tree', 6, 24, .5, s) + slider('Щільність', 'density', .1, 2, .05, s); }
     if (s.kind === 'stain'){ const [r0, g0, b0] = hexToRgb(s.color); const pal = INK_PRESETS.concat((data.palette || []).map(p => Object.assign({own: true}, p)));
       h += `<h2>Колір</h2><div class="btns" style="gap:6px;margin-bottom:8px">${pal.map((p, i) => `<span style="display:inline-flex;align-items:center"><button class="btn solid" data-sw="${p.c}" title="${p.name} ${p.c}" aria-label="${p.name}" aria-pressed="${p.c.toLowerCase() === (s.color || '').toLowerCase()}" style="width:44px;padding:0;background:${p.c};border:2px solid ${p.c.toLowerCase() === (s.color || '').toLowerCase() ? '#fff' : 'transparent'}"></button>${p.own ? `<button class="btn" data-swdel="${i - INK_PRESETS.length}" aria-label="Видалити ${p.name} з палітри" style="min-height:28px;padding:0 6px">×</button>` : ''}</span>`).join('')}</div>`;
       h += `<div class="row"><label for="stCol">Свій колір</label><div class="btns" style="align-items:flex-end"><input type="color" id="stCol" value="${s.color}" style="width:56px;height:36px;padding:2px;background:var(--panel2);border:1px solid var(--line);border-radius:6px">
@@ -381,7 +396,7 @@ function renderPanel(side){
       h += `<div class="row"><label for="stName">Зберегти колір у палітру</label><div class="btns" style="flex-wrap:nowrap"><input type="text" id="stName" placeholder="Назва, напр. «Гравці»" style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-height:36px;flex:1;width:auto"><button class="btn solid" id="stSave">Зберегти</button></div></div>`;
       h += `<h2>Вигляд плями</h2>` + slider('Насиченість', 'opacity', .05, 1, .01, s) + slider('Розмитість', 'blur', 0, 40, .5, s) + slider('Нерівність краю', 'rough', 0, 4, .05, s) + slider('Темний обідок', 'edge', 0, 1, .01, s) + slider('Зернистість', 'grain', 0, 1, .01, s) + slider('Бризки', 'drops', 0, 40, 1, s);
     }
-    if (s.kind === 'marsh'){ h += slider('Щільність очерету', 'density', .1, 2.5, .05, s); }
+    if (s.kind === 'terrain'){ h += `<div class="row"><label for="terrSel">Вид ландшафту</label><select id="terrSel">${Object.entries(TERRAINS).map(([k, v]) => `<option value="${k}" ${k === terrainOf(s) ? 'selected' : ''}>${v.name}</option>`).join('')}</select></div>` + slider('Щільність позначок', 'density', .1, 3, .05, s) + (terrainOf(s) === 'hills' ? slider('Розмір пагорбів', 'size', 12, 70, 1, Object.assign(s, {size: s.size ?? 26})) : ''); }
     if ((s.kind === 'vill' || s.kind === 'town' || s.kind === 'fort') && s.scale == null) s.scale = 1;
     if (s.kind === 'vill' || s.kind === 'town' || s.kind === 'fort'){ h += slider('Масштаб будівель', 'scale', .4, 3, .05, s); const ig = s.ignore || {};
       h += `<label class="check"><input type="checkbox" id="zoneClear" ${s.clear !== false ? 'checked' : ''}> Прибирати дерева, гори й сніг у зоні</label><p class="help" style="padding:0;margin:-2px 0 10px">Вимкнено — ліс і гори лишаються між будинками, полями й мурами (лісове село, замок серед скель).</p>`;
@@ -407,11 +422,13 @@ function renderPanel(side){
     } else h += `<p class="help" style="padding:0;margin-top:10px">Щоб додавати чи видаляти точки, спершу перетворіть овал на полігон.</p>`;
   } else {
     h += `<h2>Мапа</h2><div id="mapBody"></div><h2>Контури й вибір</h2><label class="check"><input type="checkbox" id="outChk" ${showOutlines ? 'checked' : ''}> Показувати контури</label>`;
-    h += `<div class="vis">` + ['land','lake','mountain','forest','marsh','river','road','rail','path','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('') + `</div>`;
+    h += `<div class="vis">` + ['land','lake','mountain','forest','terrain','river','road','rail','path','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('') + `</div>`;
   }
   side.innerHTML = h;
   if (selected){ const sel = selected; bindSliders(side, sel, v => { if (sel.kind === 'river') lastRiverWidth = v; changed(); }); }
   const q = id => document.getElementById(id);
+  if (q('treesSel')) q('treesSel').addEventListener('change', e => { pushUndo(); selected.trees = e.target.value; newTrees = e.target.value; changed(); });
+  if (q('terrSel')) q('terrSel').addEventListener('change', e => { pushUndo(); selected.terrain = e.target.value; newTerrain = e.target.value; changed(); renderSide(); });
   if (q('kindSel')) q('kindSel').addEventListener('change', e => { pushUndo(); selected.kind = e.target.value; Object.assign(selected, Object.assign(defaultsFor(selected.kind), selected)); changed(); renderSide(); });
   if (q('toPoly')) q('toPoly').addEventListener('click', () => { pushUndo(); const p = ellipsePts(selected, 16).map(p => [Math.round(p[0]), Math.round(p[1])]); delete selected.cx; delete selected.cy; delete selected.rx; delete selected.ry; delete selected.rot; selected.shape = 'poly'; selected.pts = p; changed(); renderSide(); });
   if (q('dupBtn')) q('dupBtn').addEventListener('click', () => { pushUndo(); const c = JSON.parse(JSON.stringify(selected)); c.id = 's' + (uid++); if (c.shape === 'ellipse'){ c.cx += 40; c.cy += 40; } else c.pts = c.pts.map(p => [p[0] + 40, p[1] + 40]); data.shapes.push(c); selected = c; changed(); renderSide(); });

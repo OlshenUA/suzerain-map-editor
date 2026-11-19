@@ -34,7 +34,7 @@ function tplPin(pts, corners, d = 100){
     if (a) out.push(a); out.push(p); if (b) out.push(b); }
   return out;
 }
-function tplBase(W, H, shapes){ return {v: 1, W, H, seed: 7, settings: {scatter: 1, snow: 1}, shapes: shapes || [], stamps: [{type: 'compass', x: Math.round(W - 220), y: 220, size: 190}], texts: []}; }
+function tplBase(W, H, shapes){ return {v: 2, W, H, seed: 7, settings: {scatter: 1}, shapes: shapes || [], stamps: [{type: 'compass', x: Math.round(W - 220), y: 220, size: 190}], texts: []}; }
 
 window.MAP_TEMPLATES = [
   {id: 'sea', name: 'Чистий аркуш', desc: 'Тільки вода й пергамент. Сушу малюєте самі.',

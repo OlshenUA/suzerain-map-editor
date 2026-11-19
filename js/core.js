@@ -5,13 +5,13 @@ const DEFAULT_JSON = JSON.stringify(window.DEFAULT_MAP);
 let data = JSON.parse(DEFAULT_JSON);
 let W = data.W, H = data.H; // змінюються разом із data (applyMapSize у render.js)
 const INK = '#2a1b0e', PAPER = '#e2cb94', PAPER_L = '#efe2bd', SEA_FILL = '#dcc48d';
-const KIND_NAME = {land:'Суша', lake:'Озеро', mountain:'Гори', forest:'Ліс', marsh:'Болото', river:'Річка', region:'Область генерації', vill:'Село', town:'Місто', fort:'Фортеця', road:'Дорога', rail:'Залізниця', path:'Шлях', stain:'Пляма'};
-const KIND_COLOR = {land:'#5fb3c4', lake:'#7aa7ff', mountain:'#e0795a', forest:'#79c26a', marsh:'#c49be8', river:'#5aa0ff', region:'#f2ead8', vill:'#f0c060', town:'#ff9f5a', fort:'#ff6b6b', road:'#e6d27a', rail:'#b0b0b0', path:'#e0a0d0', stain:'#d07ad0'};
+const KIND_NAME = {land:'Суша', lake:'Озеро', mountain:'Гори', forest:'Ліс', marsh:'Болото', terrain:'Ландшафт', river:'Річка', region:'Область генерації', vill:'Село', town:'Місто', fort:'Фортеця', road:'Дорога', rail:'Залізниця', path:'Шлях', stain:'Пляма'};
+const KIND_COLOR = {land:'#5fb3c4', lake:'#7aa7ff', mountain:'#e0795a', forest:'#79c26a', marsh:'#c49be8', terrain:'#c49be8', river:'#5aa0ff', region:'#f2ead8', vill:'#f0c060', town:'#ff9f5a', fort:'#ff6b6b', road:'#e6d27a', rail:'#b0b0b0', path:'#e0a0d0', stain:'#d07ad0'};
 const LS_KEY = 'kraitren-map-editor-autosave-v1';
 const DB_DOC = 'maps/north';
 
 let uid = 1;
-function ensureIds(){ for (const s of data.shapes){ if(!s.id) s.id = 's' + (uid++); else { const n = +String(s.id).slice(1); if(n >= uid) uid = n + 1; } } if (typeof ensureDecor === 'function') ensureDecor(); if (typeof applyMapSize === 'function') applyMapSize(); }
+function ensureIds(){ if (typeof migrateNature === 'function') migrateNature(data); for (const s of data.shapes){ if(!s.id) s.id = 's' + (uid++); else { const n = +String(s.id).slice(1); if(n >= uid) uid = n + 1; } } if (typeof ensureDecor === 'function') ensureDecor(); if (typeof applyMapSize === 'function') applyMapSize(); }
 ensureIds();
 
 // ================= noise / rng =================

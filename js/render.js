@@ -5,7 +5,7 @@ function layer(w, h){ const c = document.createElement('canvas'); c.width = w; c
 
 function buildGeometry(){
   const seed = data.seed | 0;
-  const lands = [], lakes = [], rivers = [], mts = [], fos = [], mar = [], set = [], routes = [], stains = [];
+  const lands = [], lakes = [], rivers = [], mts = [], fos = [], ter = [], set = [], routes = [], stains = [];
   for (const s of data.shapes){
     if (s.kind === 'land' || s.kind === 'lake'){
       let p = shapePts(s); if (p.length < 3) continue;
@@ -18,9 +18,9 @@ function buildGeometry(){
       if (s.pts.length < 2) continue;
       const sm = chaikin(s.pts, 3, false); const rough = roughen(sm, false, 1.6, seed + 23, 5);
       rivers.push({s, pts: rough});
-    } else if (s.kind === 'mountain') mts.push(s); else if (s.kind === 'forest') fos.push(s); else if (s.kind === 'marsh') mar.push(s); else if (s.kind === 'vill' || s.kind === 'town' || s.kind === 'fort') set.push(s);
+    } else if (s.kind === 'mountain') mts.push(s); else if (s.kind === 'forest') fos.push(s); else if (s.kind === 'terrain') ter.push(s); else if (s.kind === 'vill' || s.kind === 'town' || s.kind === 'fort') set.push(s);
   }
-  return {lands, lakes, rivers, mts, fos, mar, set, routes, stains};
+  return {lands, lakes, rivers, mts, fos, ter, set, routes, stains};
 }
 
 const WIDE = 4.5;
@@ -90,33 +90,25 @@ function placeGlyphs(geo, dist){
     }
   }
   for (const [x, y, s] of placed){ glyphs.push({y, t: 'm', x, s, r: hash3(x|0, y|0, seed) * 1e9 | 0}); mark(x, y, s * .9); }
-  // marshes: reed tufts and wet dashes
-  for (const z of geo.mar){
-    const pts = shapePts(z); const bb = bbox(pts); const area = polyArea(pts); const R = rng(seed * 23 + strHash(z.id));
-    const n = Math.min(20000, Math.round(area / 140 * (z.density ?? 1)));
-    for (let i = 0; i < n; i++){ const x = bb[0] + R()*(bb[2]-bb[0]), y = bb[1] + R()*(bb[3]-bb[1]); if (!inside(z, x, y)) continue;
-      if (!landAt(x, y, 5) || !free(x, y, 6)) continue;
-      const t = R() < .38 ? 'w' : 'b'; glyphs.push({y, t, x, s: 5.5 + R()*3.5, r: (R()*1e9)|0}); mark(x, y, t === 'w' ? 7 : 6); }
-  }
+  // ландшафт (nature.js): пагорби одразу після гір, болота перед лісами
+  const nc = {landAt, free, mark, glyphs, seed, near, addM};
+  placeHills(geo, nc); placeMarsh(geo, nc);
   // forests
   for (const z of geo.fos){
     const pts = shapePts(z); const bb = bbox(pts); const area = polyArea(pts); const R = rng(seed * 13 + strHash(z.id));
-    const ts = z.tree ?? 11; const n = Math.min(60000, Math.round(area / 18 * (z.density ?? 1)));
-    const sp = Math.max(3, ts * .55 / Math.sqrt(Math.max(.2, z.density ?? 1)));
+    const ts = z.tree ?? 11; const n = Math.min(60000, Math.round(area / 18 * (z.density ?? 1))); const tk = treesOf(z);
+    const sp = Math.max(3, ts * .55 * TREE_TYPES[tk].space / Math.sqrt(Math.max(.2, z.density ?? 1)));
     for (let i = 0; i < n; i++){ const x = bb[0] + R()*(bb[2]-bb[0]), y = bb[1] + R()*(bb[3]-bb[1]); if (!inside(z, x, y)) continue;
-      if (!landAt(x, y, 8) || !free(x, y, sp)) continue; const s = ts * (.82 + R()*.36); glyphs.push({y, t: 't', x, s, r: (R()*1e9)|0}); mark(x, y, sp); }
+      if (!landAt(x, y, 8) || !free(x, y, sp)) continue; const s = ts * (.82 + R()*.36); glyphs.push({y, t: 't', x, s, r: (R()*1e9)|0, k: pickTree(tk, R)}); mark(x, y, sp); }
   }
   // scattered trees
-  { const R = rng(seed * 17 + 5); const n = Math.round(2500 * (st.scatter ?? 1));
+  { const R = rng(seed * 17 + 5); const n = Math.round(2500 * (st.scatter ?? 1)); const stk = TREE_TYPES[st.scatterTrees] ? st.scatterTrees : 'conifer'; const sf = TREE_TYPES[stk].space; const noTrees = geo.ter.filter(z => terrainOf(z) === 'desert'); const treeOk = (x, y) => !noTrees.some(z => inside(z, x, y));
     for (let i = 0; i < n; i++){ const x = 40 + R()*(W-80), y = 40 + R()*(H-80); if (!(landAt(x, y, 10) && free(x, y, 16) && R() < .08)) continue;
-      const k = 1 + (R()*4|0); for (let j = 0; j < k; j++){ const xx = x + (R()-.5)*32, yy = y + (R()-.5)*18; if (landAt(xx, yy, 8) && free(xx, yy, 7)){ glyphs.push({y: yy, t: 't', x: xx, s: 8 + R()*3, r: (R()*1e9)|0}); mark(xx, yy, 7); } } } }
-  // snow
-  const snow = [], stip = [];
-  { const R = rng(seed * 19 + 9); const n = Math.round(30000 * (st.snow ?? 1));
-    for (let i = 0; i < n; i++){ const x = 30 + R()*(W-60), y = 30 + R()*(H-60); if (!landAt(x, y, 6) || !free(x, y, 7)) continue; const r = R();
-      if (r < .07){ snow.push([x, y, 7 + R()*6]); mark(x, y, 4); } else if (r < .55) stip.push([x, y]); } }
+      const k = 1 + (R()*4|0); for (let j = 0; j < k; j++){ const xx = x + (R()-.5)*32, yy = y + (R()-.5)*18; if (landAt(xx, yy, 8) && free(xx, yy, 7 * sf) && treeOk(xx, yy)){ glyphs.push({y: yy, t: 't', x: xx, s: 8 + R()*3, r: (R()*1e9)|0, k: pickTree(stk, R)}); mark(xx, yy, 7 * sf); } } } }
+  // сніг, тундра, степ, пустеля (nature.js)
+  const {snow, stip, dash} = placeGround(geo, nc);
   glyphs.sort((a, b) => a.y - b.y);
-  return {glyphs, snow, stip, fields: settle.fields, walls: settle.walls};
+  return {glyphs, snow, stip, dash, fields: settle.fields, walls: settle.walls};
 }
 
 function drawMountain(g, x, y, s, seedv){
@@ -471,9 +463,10 @@ function renderMap(scale, withDecor, noFrame){
   // stipple & snow ticks
   g.fillStyle = INK; g.globalAlpha = .33; for (const [x, y] of pl.stip){ g.fillRect(x - .65, y - .65, 1.3, 1.3); } g.globalAlpha = 1;
   g.beginPath(); for (const [x, y, l] of pl.snow){ g.moveTo(x, y); g.quadraticCurveTo(x + l/2, y - l*.35, x + l, y); } g.strokeStyle = INK; g.globalAlpha = .55; g.lineWidth = .8; g.lineCap = 'round'; g.stroke(); g.globalAlpha = 1;
+  g.beginPath(); for (const [x, y, l] of pl.dash){ g.moveTo(x - l/2, y); g.lineTo(x + l/2, y); } g.strokeStyle = INK; g.globalAlpha = .5; g.lineWidth = .7; g.stroke(); g.globalAlpha = 1;
   drawFields(g, pl.fields); drawRoutes(g, geo.routes); drawWalls(g, pl.walls, landL);
   // glyphs
-  for (const o of pl.glyphs){ if (o.t === 'h') drawHut(g, o.x, o.y, o.s, o.r); else if (o.t === 'wt') drawWallTower(g, o.x, o.y, o.s, o.cone); else if (o.t === 'sp') drawSpire(g, o.x, o.y, o.s); else if (o.t === 'kp') drawKeep(g, o.x, o.y, o.s); else if (o.t === 'm') drawMountain(g, o.x, o.y, o.s, o.r); else if (o.t === 't') drawTree(g, o.x, o.y, o.s, o.r); else if (o.t === 'b') drawTuft(g, o.x, o.y, o.s, o.r); else drawWet(g, o.x, o.y, o.s, o.r); }
+  for (const o of pl.glyphs){ if (o.t === 'h') drawHut(g, o.x, o.y, o.s, o.r); else if (o.t === 'wt') drawWallTower(g, o.x, o.y, o.s, o.cone); else if (o.t === 'sp') drawSpire(g, o.x, o.y, o.s); else if (o.t === 'kp') drawKeep(g, o.x, o.y, o.s); else if (o.t === 'm') drawMountain(g, o.x, o.y, o.s, o.r); else if (drawNatureGlyph(g, o)){} else if (o.t === 'b') drawTuft(g, o.x, o.y, o.s, o.r); else drawWet(g, o.x, o.y, o.s, o.r); }
   drawStains(g, geo.stains, scale);
   if (withDecor) drawDecor(g);
   // frame
