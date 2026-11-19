@@ -49,6 +49,7 @@
     <button class="btn solid" id="jsonBtn">JSON</button>
     <button class="btn solid" id="exportBtn">Експорт PNG</button>
     <button class="btn primary" id="saveBtn" title="Ctrl+S, Ctrl+Shift+S — зберегти як">Зберегти</button>
+    <button class="btn solid helpbtn" id="helpBtn" title="Підказки (F1)" aria-label="Підказки">?</button>
   </div>
   <div class="main">
     <div class="stage" id="stage">
@@ -92,6 +93,41 @@
     <h3 id="confirmTitle">Підтвердження</h3>
     <p id="confirmText"></p>
     <div class="btns"><span class="spacer"></span><button class="btn solid" id="confirmNo">Скасувати</button><button class="btn primary" id="confirmYes">Так</button></div>
+  </div>
+</div>
+<div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="card wide">
+    <h3 id="helpTitle">Як користуватися редактором</h3>
+    <h4>Основне</h4>
+    <ul class="help">
+      <li><b>Вибір</b> (<kbd>V</kbd>): клік по зоні вибирає її, тягніть вершини. Вибрану зону можна тягнути цілою.</li>
+      <li>Порожнє місце — тягнути мапу, колесо — масштаб, <kbd>Пробіл</kbd>+тягнути — теж зсув.</li>
+      <li><b>Полігон</b> (<kbd>P</kbd>) і <b>Овал</b> (<kbd>O</kbd>): спершу оберіть, що малюєте — сушу, озеро, гори чи ліс.</li>
+      <li><b>Річка</b> (<kbd>R</kbd>): клікайте точки русла від витоку до гирла, подвійний клік або <kbd>Enter</kbd> — завершити. Точки біля іншої річки, озера чи берега прилипають до них (помаранчеве коло), <kbd>Shift</kbd> — без прилипання.</li>
+      <li><kbd>Delete</kbd> — видалити зону або вибрану вершину, <kbd>Ctrl+Z</kbd> — скасувати.</li>
+      <li>Нова суша, що перекриває стару, зливається з нею в одне узбережжя.</li>
+    </ul>
+    <h4>Штампи, написи й шляхи</h4>
+    <ul class="help">
+      <li>«Штамп» (<kbd>S</kbd>) — оберіть вигляд угорі й клікніть на мапі.</li>
+      <li>«Текст» (<kbd>T</kbd>) — протягніть рамку.</li>
+      <li>«Шляхи» (<kbd>D</kbd>) — дорога, залізниця чи пунктирний шлях: клікайте точки, <kbd>Enter</kbd> — завершити; кінці прилипають до інших шляхів і штампів.</li>
+      <li>Штампи й написи можна тягати, а розмір змінювати за помаранчевий квадрат у куті.</li>
+    </ul>
+    <h4>Генерація струмків, озерець і боліт</h4>
+    <ul class="help">
+      <li>Намалюйте полігон чи овал типу «Область генерації», виберіть його — і генеруйте в ньому озерця, струмки й болота окремо.</li>
+    </ul>
+    <h4>Контури й вибір</h4>
+    <ul class="help">
+      <li>Мишкою вибираються лише ті типи, що увімкнені в бічній панелі. Якщо контури вимкнено, зони не вибираються.</li>
+    </ul>
+    <h4>Файли</h4>
+    <ul class="help">
+      <li>«Зберегти» (<kbd>Ctrl+S</kbd>) — у JSON-файл на комп’ютері; «Відкрити» (<kbd>Ctrl+O</kbd>) — відкрити мапу з файлу.</li>
+      <li>Автозбереження в браузері відновить роботу після закриття вкладки.</li>
+    </ul>
+    <div class="btns" style="margin-top:14px"><span class="spacer"></span><button class="btn primary" id="helpClose">Зрозуміло</button></div>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>

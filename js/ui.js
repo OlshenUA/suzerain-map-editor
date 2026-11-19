@@ -2,14 +2,15 @@
 // View, interaction, side panel, persistence (local files), export, boot.
 // ================= view =================
 const stage = document.getElementById('stage'), view = document.getElementById('view'), vctx = view.getContext('2d');
-let mapImg = null; let vs = {scale: .4, ox: 0, oy: 0}; let dpr = window.devicePixelRatio || 1;
+let mapImg = null; let vs = {scale: .4, ox: 0, oy: 0}; let autoFit = true; let dpr = window.devicePixelRatio || 1;
 function resize(){ dpr = window.devicePixelRatio || 1; const r = stage.getBoundingClientRect(); view.width = Math.max(1, r.width * dpr); view.height = Math.max(1, r.height * dpr); draw(); }
-function fit(){ const r = stage.getBoundingClientRect(); const s = Math.min(r.width / W, r.height / H) * .98; vs.scale = s; vs.ox = (r.width - W*s)/2; vs.oy = (r.height - H*s)/2; draw(); }
+function fit(){ autoFit = true; const r = stage.getBoundingClientRect(); const s = Math.min(r.width / W, r.height / H) * .98; vs.scale = s; vs.ox = (r.width - W*s)/2; vs.oy = (r.height - H*s)/2; draw(); }
 function toWorld(sx, sy){ return [(sx - vs.ox)/vs.scale, (sy - vs.oy)/vs.scale]; }
 function toScreen(x, y){ return [x*vs.scale + vs.ox, y*vs.scale + vs.oy]; }
 
 let vmode = null; let ghost = null; let hoverV = -1;
 let selObj = null;
+// autoFit: поки користувач не рухав вигляд, мапа вписується заново при зміні розміру сцени
 let showOutlines = true; let selected = null; let activeVertex = -1; let drawing = null; let hover = null;
 const visibleKinds = {land: true, lake: true, mountain: true, forest: true, marsh: true, river: true, region: true, vill: true, town: true, fort: true, road: true, rail: true, path: true, stain: true, stamp: true, text: true};
 function draw(){
@@ -212,7 +213,7 @@ view.addEventListener('pointermove', e => {
   if (drawing && drawing.type === 'poly'){ drawing.cursor = isLineKind(drawing.kind) ? snapLinePoint(drawing.kind, x, y, null, e.shiftKey) : [x, y]; draw(); }
   else if ((tool === 'river' || tool === 'route') && !drag){ snapLinePoint(tool === 'river' ? 'river' : newRoute, x, y, null, e.shiftKey); draw(); }
   if (!drag) return;
-  if (drag.type === 'pan'){ vs.ox = drag.ox + (sx - drag.sx); vs.oy = drag.oy + (sy - drag.sy); if (Math.abs(sx - drag.sx) + Math.abs(sy - drag.sy) > 3) drag.moved = true; draw(); return; }
+  if (drag.type === 'pan'){ autoFit = false; vs.ox = drag.ox + (sx - drag.sx); vs.oy = drag.oy + (sy - drag.sy); if (Math.abs(sx - drag.sx) + Math.abs(sy - drag.sy) > 3) drag.moved = true; draw(); return; }
   if (drag.type === 'objmove'){ selObj.o.x = Math.round(drag.ox + x - drag.x0); selObj.o.y = Math.round(drag.oy + y - drag.y0); drag.dirty = true; draw(); return; }
   if (drag.type === 'objsize'){ const o = selObj.o, o0 = drag.o0; drag.dirty = true;
     if (selObj.type === 'text'){ o.w = Math.max(40, Math.round(o0.w + x - drag.x0)); o.h = Math.max(20, Math.round(o0.h + y - drag.y0)); }
@@ -256,7 +257,18 @@ function finishPoly(){ if (!drawing) return; const pts = drawing.pts; const min 
   if (clean.length >= min){ pushUndo(); const s = Object.assign({id: 's' + (uid++), kind: drawing.kind, shape: isLineKind(drawing.kind) ? 'line' : 'poly', pts: clean}, defaultsFor(drawing.kind)); data.shapes.push(s); selected = s; changed(); }
   drawing = null; snapMark = null; setTool('select'); renderSide(); draw(); }
 view.addEventListener('wheel', e => { e.preventDefault(); const [sx, sy] = pos(e); const f = Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)); const ns = Math.min(4, Math.max(.08, vs.scale * f));
-  const [wx, wy] = toWorld(sx, sy); vs.scale = ns; vs.ox = sx - wx*ns; vs.oy = sy - wy*ns; draw(); }, {passive: false});
+  autoFit = false; const [wx, wy] = toWorld(sx, sy); vs.scale = ns; vs.ox = sx - wx*ns; vs.oy = sy - wy*ns; draw(); }, {passive: false});
+// ================= help dialog =================
+const helpM = document.getElementById('helpModal');
+function toggleHelp(open){ helpM.classList.toggle('open', open ?? !helpM.classList.contains('open')); if (helpM.classList.contains('open')) { document.getElementById('helpClose').focus({preventScroll: true}); helpM.querySelector('.card').scrollTop = 0; } }
+document.getElementById('helpBtn').addEventListener('click', () => toggleHelp());
+document.getElementById('helpClose').addEventListener('click', () => toggleHelp(false));
+helpM.addEventListener('click', e => { if (e.target === helpM) toggleHelp(false); });
+window.addEventListener('keydown', e => {
+  if (e.key === 'F1' || (e.key === '?' && !e.target.matches('input,textarea,select'))){ e.preventDefault(); toggleHelp(); return; }
+  if (e.key === 'Escape' && helpM.classList.contains('open')){ e.stopImmediatePropagation(); toggleHelp(false); }
+}, true);
+
 window.addEventListener('keydown', e => {
   if (e.target.matches('input,textarea,select')) return;
   if (e.code === 'Space'){ spaceDown = true; e.preventDefault(); }
@@ -360,19 +372,10 @@ function renderSide(){
     h += `<div class="row"><label for="seedIn">Варіант розкладки (seed)</label><div class="btns" style="flex-wrap:nowrap"><input type="number" id="seedIn" value="${data.seed}"><button class="btn solid" id="seedNew">Інший</button></div></div>`;
     h += slider('Розсип окремих дерев', 'scatter', 0, 3, .05, st) + slider('Снігові позначки', 'snow', 0, 2, .05, st);
     const nGen = data.shapes.filter(x => x.gen === 'wet').length;
-    h += `<h2>Штампи й написи</h2><p class="help" style="padding:0;margin-bottom:8px">«Штамп» (<kbd>S</kbd>) — оберіть вигляд угорі й клікніть на мапі. «Текст» (<kbd>T</kbd>) — протягніть рамку. «Шляхи» (<kbd>D</kbd>) — дорога, залізниця чи пунктирний шлях: клікайте точки, <kbd>Enter</kbd> — завершити; кінці прилипають до інших шляхів і штампів. Їх можна тягати, а розмір змінювати за помаранчевий квадрат у куті.</p>`;
-    h += `<h2>Генерація струмків, озерець і боліт</h2><p class="help" style="padding:0;margin-bottom:8px">Намалюйте полігон чи овал типу «Область генерації», виберіть його — і генеруйте в ньому озерця, струмки й болота окремо.</p>`;
-    if (nGen) h += `<div class="btns"><button class="btn solid" id="wetClear">Прибрати стару автогенерацію (${nGen})</button></div>`;
-    h += `<h2>Контури й вибір</h2><p class="help" style="padding:0;margin-bottom:6px">Мишкою вибираються лише ті типи, що тут увімкнені.</p><label class="check"><input type="checkbox" id="outChk" ${showOutlines ? 'checked' : ''}> Показувати контури (вимкнено — зони не вибираються)</label>`;
-    h += ['land','lake','mountain','forest','marsh','river','road','rail','path','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('');
-    h += `<h2>Як редагувати</h2><ul class="help">
-      <li><b>Вибір</b> (<kbd>V</kbd>): клік по зоні вибирає її, тягніть вершини. Вибрану зону можна тягнути цілою.</li>
-      <li>Порожнє місце — тягнути мапу, колесо — масштаб, <kbd>Пробіл</kbd>+тягнути — теж зсув.</li>
-      <li><b>Полігон</b> (<kbd>P</kbd>) і <b>Овал</b> (<kbd>O</kbd>): спершу оберіть, що малюєте — сушу, озеро, гори чи ліс.</li>
-      <li><b>Річка</b> (<kbd>R</kbd>): клікайте точки русла від витоку до гирла, подвійний клік або <kbd>Enter</kbd> — завершити. Точки біля іншої річки, озера чи берега прилипають до них (помаранчеве коло), <kbd>Shift</kbd> — без прилипання.</li>
-      <li><kbd>Delete</kbd> — видалити зону або вибрану вершину, <kbd>Ctrl+Z</kbd> — скасувати.</li>
-      <li>Нова суша, що перекриває стару, зливається з нею в одне узбережжя.</li>
-      <li>«Зберегти» (<kbd>Ctrl+S</kbd>) — у JSON-файл на комп’ютері; «Відкрити» (<kbd>Ctrl+O</kbd>) — відкрити мапу з файлу. Автозбереження в браузері відновить роботу після закриття вкладки.</li></ul>`;
+    if (nGen) h += `<div class="btns" style="margin-bottom:8px"><button class="btn solid" id="wetClear">Прибрати стару автогенерацію (${nGen})</button></div>`;
+    h += `<h2>Контури й вибір</h2><label class="check"><input type="checkbox" id="outChk" ${showOutlines ? 'checked' : ''}> Показувати контури</label>`;
+    h += `<div class="vis">` + ['land','lake','mountain','forest','marsh','river','road','rail','path','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('') + `</div>`;
+    h += `<p class="help" style="padding:0;margin-top:10px">Як користуватися — кнопка <b>?</b> угорі або <kbd>F1</kbd>.</p>`;
   }
   side.innerHTML = h;
   side.querySelectorAll('input[type=range]').forEach(inp => {
@@ -455,7 +458,7 @@ document.getElementById('exGo').addEventListener('click', async () => {
   busy.style.display = 'none'; busy.textContent = 'Перемальовую…'; });
 
 // ================= boot =================
-new ResizeObserver(() => resize()).observe(stage);
+new ResizeObserver(() => { resize(); if (autoFit) fit(); }).observe(stage);
 setKind('mountain'); setTool('select'); updateUndo();
 resize(); fit(); renderSide(); scheduleRender(0);
 if (document.fonts){ Promise.all(FONTS.map(([f]) => document.fonts.load(`36px "${f}"`).catch(() => {}))).then(() => draw()); }
