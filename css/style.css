@@ -28,12 +28,22 @@ button,select,input{font:inherit;color:inherit}
 .busy{position:absolute;right:12px;bottom:12px;background:rgba(28,25,21,.85);border:1px solid var(--line);padding:6px 10px;border-radius:6px;font-size:13px;color:var(--muted);display:none}
 .side{flex:0 0 310px;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;overflow-x:hidden;padding:14px 16px}
 .side input{min-width:0}
+/* ліва панель опцій активного інструмента (що малювати, вид кривої, штамп) */
+.opts{flex:0 0 190px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:14px 10px}
+.opts[hidden],.optlist[hidden]{display:none}
+.opts h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px 4px;font-weight:600}
+.optlist{display:flex;flex-direction:column;gap:2px}
+.optlist .btn{display:flex;align-items:center;gap:8px;text-align:left;white-space:normal;min-height:34px}
+.optlist .dot{flex:0 0 auto}
 /* вузькі екрани: мапа зверху, панель знизу */
 @media (max-width:899px){
   .app{height:100dvh}
   .main{flex-direction:column}
   .stage{min-height:220px}
   .side{flex:0 0 auto;max-height:40%;border-left:0;border-top:1px solid var(--line)}
+  .opts{flex:0 0 auto;border-right:0;border-bottom:1px solid var(--line);padding:8px 10px;max-height:30%}
+  .opts h2{display:none}
+  .optlist{flex-direction:row;flex-wrap:wrap}
 }
 .vis{display:grid;grid-template-columns:1fr 1fr;column-gap:8px}
 .vis .check{min-height:28px;font-size:13px}

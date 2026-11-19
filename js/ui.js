@@ -103,12 +103,18 @@ window.addEventListener('beforeunload', () => { if (saveTimer) saveCurrent(); })
 window.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); saveFile(e.shiftKey); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o'){ e.preventDefault(); openFile(); } });
 
 // ================= tools / interaction =================
-let tool = 'select', newKind = 'mountain', newStamp = 'house', newRoute = 'road';
-document.getElementById('routeBar').addEventListener('click', e => { const b = e.target.closest('[data-route]'); if (!b) return; newRoute = b.dataset.route; for (const c of document.getElementById('routeBar').children) c.setAttribute('aria-pressed', String(c.dataset.route === newRoute)); });
+// «Крива» малює річку, дорогу, залізницю чи пунктирний шлях — вид обирається в лівій панелі опцій.
+let tool = 'select', newKind = 'mountain', newStamp = 'house', newCurve = 'river';
+document.getElementById('curveBar').addEventListener('click', e => { const b = e.target.closest('[data-curve]'); if (!b) return; newCurve = b.dataset.curve; for (const c of document.getElementById('curveBar').children) c.setAttribute('aria-pressed', String(c.dataset.curve === newCurve)); });
+// кольорові позначки, як у контурів на мапі
+for (const b of document.querySelectorAll('#kinds [data-kind], #curveBar [data-curve]')){ const k = b.dataset.kind || b.dataset.curve; b.insertAdjacentHTML('afterbegin', `<span class="dot" style="background:${KIND_COLOR[k]}"></span>`); }
 (function(){ const sb = document.getElementById('stampsBar'); sb.innerHTML = Object.entries(STAMPS).map(([k, v]) => `<button class="btn" data-stamp="${k}" aria-pressed="${k === 'house'}">${v.name}</button>`).join('');
   sb.addEventListener('click', e => { const b = e.target.closest('[data-stamp]'); if (!b) return; newStamp = b.dataset.stamp; for (const c of sb.children) c.setAttribute('aria-pressed', String(c.dataset.stamp === newStamp)); }); })();
 const toolsEl = document.getElementById('tools'), kindsEl = document.getElementById('kinds');
-function setTool(t){ tool = t; drawing = null; const rb = document.getElementById('routeBar'); if (rb) rb.style.display = t === 'route' ? '' : 'none'; const sb = document.getElementById('stampsBar'); if (sb) sb.style.display = t === 'stamp' ? '' : 'none'; for (const b of toolsEl.children) b.setAttribute('aria-pressed', String(b.dataset.tool === t)); kindsEl.style.display = (t === 'poly' || t === 'ellipse') ? '' : 'none'; view.style.cursor = t === 'select' ? 'default' : 'crosshair'; draw(); }
+const OPTS_TITLE = {poly: 'Що малювати', ellipse: 'Що малювати', curve: 'Вид кривої', stamp: 'Штамп'};
+function setTool(t){ tool = t; drawing = null; for (const b of toolsEl.children) b.setAttribute('aria-pressed', String(b.dataset.tool === t));
+  const opts = document.getElementById('opts'); opts.hidden = !OPTS_TITLE[t]; if (OPTS_TITLE[t]){ document.getElementById('optsTitle').textContent = OPTS_TITLE[t]; for (const l of opts.querySelectorAll('.optlist')) l.hidden = !l.dataset.for.split(' ').includes(t); }
+  view.style.cursor = t === 'select' ? 'default' : 'crosshair'; draw(); }
 function setKind(k){ newKind = k; for (const b of kindsEl.children) b.setAttribute('aria-pressed', String(b.dataset.kind === k)); }
 toolsEl.addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
 kindsEl.addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) setKind(b.dataset.kind); });
@@ -191,8 +197,8 @@ view.addEventListener('pointerdown', e => {
   if (tool === 'text'){ drawing = {type: 'textbox', x0: x, y0: y, b: null}; drag = {type: 'textbox'}; return; }
   if (tool === 'exrect'){ drawing = {type: 'exrect', x0: x, y0: y, b: null}; drag = {type: 'exrect'}; return; }
   if (tool === 'ellipse'){ drawing = {type: 'ellipse', kind: newKind, x0: x, y0: y, e: null}; drag = {type: 'ellipse'}; return; }
-  if (tool === 'poly' || tool === 'river' || tool === 'route'){
-    if (!drawing) drawing = {type: 'poly', kind: tool === 'river' ? 'river' : tool === 'route' ? newRoute : newKind, pts: []};
+  if (tool === 'poly' || tool === 'curve'){
+    if (!drawing) drawing = {type: 'poly', kind: tool === 'curve' ? newCurve : newKind, pts: []};
     const last = drawing.pts[drawing.pts.length - 1];
     const sp = isLineKind(drawing.kind) ? snapLinePoint(drawing.kind, x, y, null, e.shiftKey) : [Math.round(x*10)/10, Math.round(y*10)/10];
     if (!last || Math.hypot(last[0] - sp[0], last[1] - sp[1]) > 3 / vs.scale) drawing.pts.push(sp);
@@ -204,7 +210,7 @@ view.addEventListener('pointermove', e => {
     const ng = (vmode === 'add' || e.altKey) ? planInsert(selected, x, y, e.shiftKey) : null; const nh = vmode === 'remove' ? hitVertex(selected, x, y) : -1;
     if (ng || ghost || nh !== hoverV){ ghost = ng; hoverV = nh; if (!ng) snapMark = null; draw(); } }
   if (drawing && drawing.type === 'poly'){ drawing.cursor = isLineKind(drawing.kind) ? snapLinePoint(drawing.kind, x, y, null, e.shiftKey) : [x, y]; draw(); }
-  else if ((tool === 'river' || tool === 'route') && !drag){ snapLinePoint(tool === 'river' ? 'river' : newRoute, x, y, null, e.shiftKey); draw(); }
+  else if (tool === 'curve' && !drag){ snapLinePoint(newCurve, x, y, null, e.shiftKey); draw(); }
   if (!drag) return;
   if (drag.type === 'pan'){ autoFit = false; vs.ox = drag.ox + (sx - drag.sx); vs.oy = drag.oy + (sy - drag.sy); if (Math.abs(sx - drag.sx) + Math.abs(sy - drag.sy) > 3) drag.moved = true; draw(); return; }
   if (drag.type === 'objmove'){ selObj.o.x = Math.round(drag.ox + x - drag.x0); selObj.o.y = Math.round(drag.oy + y - drag.y0); drag.dirty = true; draw(); return; }
@@ -299,7 +305,7 @@ window.addEventListener('keydown', e => {
     if (activeVertex >= 0 && selected.shape !== 'ellipse' && selected.pts.length > (selected.shape === 'line' ? 2 : 3)){ pushUndo(); selected.pts.splice(activeVertex, 1); activeVertex = -1; changed(); }
     else deleteSelected(); }
   if (selected && selected.shape !== 'ellipse' && !e.ctrlKey && !e.metaKey){ if (e.key === '+' || e.key === '=' || e.key.toLowerCase() === 'a'){ setVmode('add'); return; } if (e.key === '-' || e.key.toLowerCase() === 'x'){ setVmode('remove'); return; } }
-  if (!e.ctrlKey && !e.metaKey){ const m = {v: 'select', p: 'poly', o: 'ellipse', r: 'river', s: 'stamp', t: 'text', d: 'route'}[e.key.toLowerCase()]; if (m && !drawing) setTool(m); }
+  if (!e.ctrlKey && !e.metaKey){ const m = {v: 'select', p: 'poly', o: 'ellipse', r: 'curve', s: 'stamp', t: 'text', d: 'curve'}[e.key.toLowerCase()]; if (m && !drawing) setTool(m); }
 });
 window.addEventListener('keyup', e => { if (e.code === 'Space') spaceDown = false; if (e.key === 'Alt' && ghost && vmode !== 'add'){ ghost = null; snapMark = null; draw(); } });
 function deleteSelected(){ if (selObj){ pushUndo(); const o = selObj.o; data.stamps = data.stamps.filter(x => x !== o); data.texts = data.texts.filter(x => x !== o); selObj = null; changed(); renderSide(); return; } if (!selected) return; vmode = null; ghost = null; pushUndo(); data.shapes = data.shapes.filter(s => s !== selected); selected = null; activeVertex = -1; changed(); renderSide(); }
