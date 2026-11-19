@@ -21,7 +21,18 @@ function tplCoast(W, H, x0, seed){
   for (let i = 0; i <= n; i++){ const y = -60 + (H + 120) * i / n; let dx = 0; for (const [f, a, p] of waves) dx += Math.sin(i / n * Math.PI * 2 * f + p) * a * W;
     pts.push([Math.round(x0 + dx), Math.round(y)]); }
   pts.push([W + 60, H + 60]);
-  return pts;
+  return tplPin(pts, [[W + 60, -60], [W + 60, H + 60]]);
+}
+// Суша згладжується (chaikin), тож гострі кути полігона за межами мапи округлюються й «з'їдають» край.
+// Біля кожного такого кута ставимо дві точки на відстані d уздовж сусідніх ребер — кут лишається гострим.
+function tplPin(pts, corners, d = 100){
+  const key = p => p[0] + ',' + p[1]; const want = new Set(corners.map(key)); const out = []; const n = pts.length;
+  for (let i = 0; i < n; i++){ const p = pts[i];
+    if (!want.has(key(p))){ out.push(p); continue; }
+    const toward = q => { const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy); return L > d * 2.5 ? [Math.round(p[0] + dx / L * d), Math.round(p[1] + dy / L * d)] : null; };
+    const a = toward(pts[(i - 1 + n) % n]), b = toward(pts[(i + 1) % n]);
+    if (a) out.push(a); out.push(p); if (b) out.push(b); }
+  return out;
 }
 function tplBase(W, H, shapes){ return {v: 1, W, H, seed: 7, settings: {scatter: 1, snow: 1}, shapes: shapes || [], stamps: [{type: 'compass', x: Math.round(W - 220), y: 220, size: 190}], texts: []}; }
 
@@ -33,7 +44,7 @@ window.MAP_TEMPLATES = [
   {id: 'coast', name: 'Узбережжя', desc: 'Море на заході, суша на сході.',
     make: (W, H) => tplBase(W, H, [{kind: 'land', shape: 'poly', pts: tplCoast(W, H, W*.36, 5)}])},
   {id: 'inland', name: 'Внутрішня провінція', desc: 'Уся мапа — суша, без моря.',
-    make: (W, H) => tplBase(W, H, [{kind: 'land', shape: 'poly', pts: [[-80, -80], [W + 80, -80], [W + 80, H + 80], [-80, H + 80]]}])},
+    make: (W, H) => tplBase(W, H, [{kind: 'land', shape: 'poly', pts: tplPin([[-80, -80], [W + 80, -80], [W + 80, H + 80], [-80, H + 80]], [[-80, -80], [W + 80, -80], [W + 80, H + 80], [-80, H + 80]])}])},
   {id: 'kraitren', name: 'Північ Крайтрену', desc: 'Стартова мапа кампанії.',
     data: window.DEFAULT_MAP},
 ];
