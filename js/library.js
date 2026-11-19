@@ -24,7 +24,7 @@ function newMapId(){ return 'm' + Date.now().toString(36) + Math.random().toStri
 function mapName(d){ return (d && typeof d.name === 'string' && d.name.trim()) || 'Без назви'; }
 function fileSafe(name){ return String(name).replace(/[\\/:*?"<>|]+/g, '').trim() || 'mapa'; }
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]); }
-function fmtDate(t){ try { return new Date(t).toLocaleString('uk-UA', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}); } catch (e) { return ''; } }
+function fmtDate(t){ try { return new Date(t).toLocaleString(L('uk-UA', 'en-GB'), {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}); } catch (e) { return ''; } }
 
 // ================= автозбереження поточної мапи =================
 let saveTimer = null;
@@ -32,7 +32,7 @@ function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveCur
 function saveCurrent(){ if (typeof aiPreview !== 'undefined' && aiPreview) return; clearTimeout(saveTimer); saveTimer = null; if (currentMapId && libPut(currentMapId, data)) setStatus('Збережено в браузері'); }
 function libThumb(img){ if (!currentMapId || !img) return; const tw = 240, th = Math.max(1, Math.round(tw * img.height / img.width));
   const c = layer(tw, th); c.getContext('2d').drawImage(img, 0, 0, tw, th); try { lsSet(thumbKey(currentMapId), c.toDataURL('image/jpeg', .72)); } catch (e) {} }
-function updateTitle(){ const n = mapName(data); document.getElementById('mapTitleBtn').textContent = n; document.title = n + ' — Редактор мап'; }
+function updateTitle(){ const n = mapName(data); document.getElementById('mapTitleBtn').textContent = n; document.title = n + ' — ' + APP_SHORT(); }
 
 // Завантажити дані як поточну мапу (без збереження попередньої — це робить виклик).
 function loadMapData(d, id){
@@ -61,10 +61,10 @@ function initLibrary(){
   let list = libList();
   if (!list.length){ // перший запуск або перехід із версії, де була одна мапа в автозбереженні
     let d = null; try { const old = JSON.parse(lsGet(LS_KEY) || 'null'); if (old && old.json) d = JSON.parse(old.json); } catch (e) {}
-    if (!d || !Array.isArray(d.shapes) || OLD_STARTERS.includes(mapFingerprint(d))) d = JSON.parse(DEFAULT_JSON);
-    if (!d.name) d.name = 'Північ Крайтрену';
-    const id = newMapId(); libPut(id, d); lsSet(LIB_CUR, id); list = libList();
-    if (!list.length){ data.name = d.name; currentMapId = null; updateTitle(); fit(); scheduleRender(0); renderSide(); return; } // сховище недоступне
+    if (d && Array.isArray(d.shapes) && !OLD_STARTERS.includes(mapFingerprint(d))){ // стара робота з автозбереження — зберігаємо як мапу
+      if (!d.name) d.name = tr('Північ Крайтрену'); const id = newMapId(); libPut(id, d); lsSet(LIB_CUR, id); list = libList(); }
+    if (!list.length){ // показуємо приклад за стартовим екраном, але нічого не зберігаємо, доки користувач не обере шаблон
+      data = JSON.parse(DEFAULT_JSON); data.name = tr('Північ Крайтрену'); ensureIds(); currentMapId = null; updateTitle(); fit(); scheduleRender(0); renderSide(); setStatus(''); return; }
   }
   let id = lsGet(LIB_CUR); if (!list.some(x => x.id === id)) id = list[0].id;
   const d = libGet(id); loadMapData(d && Array.isArray(d.shapes) ? d : JSON.parse(DEFAULT_JSON), id);
@@ -93,7 +93,7 @@ function renderLibrary(){
     return `<div class="libitem${cur ? ' cur' : ''}" data-id="${esc(e.id)}">
       <button class="libthumb" data-act="open" title="Відкрити">${th ? `<img src="${esc(th)}" alt="">` : ''}</button>
       <div class="libinfo">
-        <div class="libname"><button class="linklike" data-act="open">${esc(e.name)}</button></div>
+        <div class="libname" data-noi18n><button class="linklike" data-act="open">${esc(e.name)}</button></div>
         <div class="libmeta">${e.W}×${e.H} · ${fmtDate(e.updated)}${cur ? ' · <b>відкрита зараз</b>' : ''}</div>
         <div class="btns libacts"><button class="btn solid sm" data-act="rename">Перейменувати</button><button class="btn solid sm" data-act="dup">Копія</button><button class="btn solid sm" data-act="tpl">Як шаблон</button><button class="btn solid sm" data-act="file">У файл</button><button class="btn solid sm danger" data-act="del">Видалити</button></div>
       </div></div>`; }).join('');
@@ -114,7 +114,7 @@ function dupMap(id){ const d = mapDataById(id); if (!d) return; d.name = mapName
 async function deleteMap(id){ const e = libList().find(x => x.id === id); if (!e) return;
   if (!(await ask(`Видалити мапу «${e.name}» з цього браузера? Це не можна скасувати. Якщо вона ще знадобиться, спершу натисніть «У файл».`))) return;
   libRemove(id);
-  if (id === currentMapId){ currentMapId = null; const l = libList(); if (l.length) openMap(l[0].id); else createMap(buildFromTemplate(MAP_TEMPLATES[0], 3200, 1513, 'Нова мапа')); }
+  if (id === currentMapId){ currentMapId = null; const l = libList(); if (l.length) openMap(l[0].id); else createMap(buildFromTemplate(MAP_TEMPLATES[0], 3200, 1513, L('Нова мапа', 'New map'))); }
   renderLibrary(); toast('Мапу видалено'); }
 async function mapToFile(id){ const d = mapDataById(id); if (!d) return;
   try { await dl.save({filename: fileSafe(mapName(d)) + '.json', data: new Blob([JSON.stringify(d)], {type: 'application/json'})}); toast('Файл збережено'); }
@@ -137,14 +137,16 @@ function buildFromTemplate(t, w, h, name){
 // ================= «Нова мапа» =================
 const SIZE_PRESETS = [['3200x1513', '3200 × 1513 — як Крайтрен'], ['2400x1600', '2400 × 1600 — 3:2'], ['3000x2000', '3000 × 2000 — 3:2, більша'], ['2000x2000', '2000 × 2000 — квадрат'], ['4000x2400', '4000 × 2400 — велика'], ['2000x3000', '2000 × 3000 — вертикальна'], ['custom', 'Свій розмір…']];
 let nmTpl = 'sea';
-function openNewMap(){
-  closeModal('libModal');
-  const n = libList().length + 1; document.getElementById('nmName').value = 'Нова мапа ' + n;
-  nmTpl = 'sea'; renderTplGrid(); syncSizeSelect(); openModal('newModal');
+function openNewMap(tplId){
+  closeModal('libModal'); closeModal('startModal');
+  nmTpl = tplId || 'sea'; const t = allTemplates().find(x => x.id === nmTpl);
+  // назва: для готової мапи-прикладу — її назва, інакше «Нова мапа N»
+  document.getElementById('nmName').value = t && t.data && !t.own ? tr(t.name) : L('Нова мапа', 'New map') + ' ' + (libList().length + 1);
+  renderTplGrid(); syncSizeSelect(); openModal('newModal');
   const inp = document.getElementById('nmName'); inp.focus(); inp.select(); }
 function renderTplGrid(){
   const ts = allTemplates(); if (!ts.some(t => t.id === nmTpl)) nmTpl = ts[0].id;
-  document.getElementById('nmTpl').innerHTML = ts.map(t => `<div class="tplcard-wrap"><button class="tplcard" data-tpl="${esc(t.id)}" aria-pressed="${t.id === nmTpl}"><b>${esc(t.name)}</b><span>${esc(t.desc || '')}</span></button>${t.own ? `<button class="btn sm tpldel" data-tpldel="${esc(t.id)}" aria-label="Видалити шаблон ${esc(t.name)}" title="Видалити шаблон">×</button>` : ''}</div>`).join(''); }
+  document.getElementById('nmTpl').innerHTML = ts.map(t => `<div class="tplcard-wrap"><button class="tplcard" data-tpl="${esc(t.id)}" aria-pressed="${t.id === nmTpl}"><b${t.own ? ' data-noi18n' : ''}>${esc(t.name)}</b><span>${esc(t.desc || '')}</span></button>${t.own ? `<button class="btn sm tpldel" data-tpldel="${esc(t.id)}" aria-label="Видалити шаблон ${esc(t.name)}" title="Видалити шаблон">×</button>` : ''}</div>`).join(''); }
 function curTemplate(){ return allTemplates().find(t => t.id === nmTpl) || MAP_TEMPLATES[0]; }
 function syncSizeSelect(){
   const t = curTemplate(), sel = document.getElementById('nmSize'), prev = sel.value;
@@ -188,6 +190,28 @@ function drawBoundsPreview(g, px){ const p = boundsPreview; if (!p) return;
   g.setLineDash([12*px, 7*px]); g.strokeStyle = '#d39a4a'; g.lineWidth = 2.5*px; g.strokeRect(nx, ny, nw, nh); g.setLineDash([]); }
 
 // ================= обробники (підключає boot у ui.js) =================
+// ================= стартовий екран =================
+// Мова (перший візит), «Продовжити» останню мапу, нова мапа з шаблону.
+function openStart(){
+  const needLang = !LANG; document.getElementById('startLang').hidden = !needLang; document.getElementById('startMain').hidden = needLang;
+  document.getElementById('startTitle').textContent = APP_NAME();
+  document.getElementById('startSub').textContent = L('Безкоштовний редактор фентезі-мап у стилі чорнила на пергаменті. Працює в браузері, без реєстрації.', 'A free fantasy map editor in an ink-on-parchment style. Runs in your browser, no sign-up.');
+  for (const b of document.querySelectorAll('[data-pick]')) b.innerHTML = flagSvg(b.dataset.pick) + '<span>' + (b.dataset.pick === 'uk' ? 'Українська' : 'English') + '</span>';
+  document.getElementById('startLangBtn').innerHTML = flagSvg(lang() === 'en' ? 'uk' : 'en') + (lang() === 'en' ? 'Українська' : 'English');
+  const cur = currentMapId && libList().find(x => x.id === currentMapId);
+  document.getElementById('startCont').innerHTML = cur ? `<button class="btn primary startgo" id="startContinue"><span>${esc(L('Продовжити', 'Continue'))}</span> <b data-noi18n>${esc(cur.name)}</b></button><button class="btn solid" id="startLib">${esc(L('Мої мапи', 'My maps'))}</button>` : '';
+  document.getElementById('startTpl').innerHTML = allTemplates().map(t => `<button class="tplcard${t.example ? ' example' : ''}" data-start="${esc(t.id)}">${t.example ? `<em class="badge">${esc(tr('Приклад від автора'))}</em>` : ''}<b${t.own ? ' data-noi18n' : ''}>${esc(t.name)}</b><span>${esc(t.desc || '')}</span></button>`).join('');
+  openModal('startModal'); }
+function initStart(){
+  const $ = id => document.getElementById(id);
+  $('startModal').addEventListener('click', e => {
+    const p = e.target.closest('[data-pick]'); if (p){ setLang(p.dataset.pick); openStart(); return; }
+    const t = e.target.closest('[data-start]'); if (t){ openNewMap(t.dataset.start); return; }
+    if (e.target.closest('#startContinue')){ closeModal('startModal'); return; }
+    if (e.target.closest('#startLib')){ closeModal('startModal'); openLibrary(); return; }
+    if (e.target.closest('#startLangBtn')){ setLang(lang() === 'en' ? 'uk' : 'en'); openStart(); return; }
+    if (e.target.id === 'startModal' && currentMapId) closeModal('startModal'); });
+  openStart(); }
 function initLibraryUI(){
   const $ = id => document.getElementById(id);
   $('libBtn').addEventListener('click', openLibrary);
@@ -207,7 +231,7 @@ function initLibraryUI(){
     if (del){ const t = userTemplates().find(x => x.id === del.dataset.tpldel); if (t && await ask(`Видалити шаблон «${t.name}»? Мапи, створені з нього, залишаться.`)){ deleteTemplate(t.id); renderTplGrid(); syncSizeSelect(); } return; }
     const b = e.target.closest('[data-tpl]'); if (!b) return; nmTpl = b.dataset.tpl; renderTplGrid(); syncSizeSelect(); });
   $('nmSize').addEventListener('change', syncCustom); $('nmW').addEventListener('input', syncCustom); $('nmH').addEventListener('input', syncCustom);
-  $('nmCancel').addEventListener('click', () => closeModal('newModal'));
+  $('nmCancel').addEventListener('click', () => { closeModal('newModal'); if (!currentMapId) openStart(); });
   $('nmCreate').addEventListener('click', createFromDialog);
   $('nmName').addEventListener('keydown', e => { if (e.key === 'Enter') createFromDialog(); });
   for (const k of ['l', 't', 'r', 'b']) $('bd_' + k).addEventListener('input', readBounds);
@@ -218,7 +242,8 @@ function initLibraryUI(){
   for (const id of ['libModal', 'newModal']) $(id).addEventListener('click', e => { if (e.target.id === id) closeModal(id); });
   window.addEventListener('keydown', e => { if (e.key !== 'Escape') return;
     if (isOpen('confirmModal')) return;
-    if (isOpen('newModal')){ e.stopImmediatePropagation(); closeModal('newModal'); }
+    if (isOpen('startModal')){ e.stopImmediatePropagation(); if (currentMapId) closeModal('startModal'); }
+    else if (isOpen('newModal')){ e.stopImmediatePropagation(); closeModal('newModal'); if (!currentMapId) openStart(); }
     else if (isOpen('libModal')){ e.stopImmediatePropagation(); closeModal('libModal'); }
     else if (isOpen('boundsModal')){ e.stopImmediatePropagation(); closeBounds(); } }, true);
 }

@@ -45,6 +45,6 @@ window.MAP_TEMPLATES = [
     make: (W, H) => tplBase(W, H, [{kind: 'land', shape: 'poly', pts: tplCoast(W, H, W*.36, 5)}])},
   {id: 'inland', name: 'Внутрішня провінція', desc: 'Уся мапа — суша, без моря.',
     make: (W, H) => tplBase(W, H, [{kind: 'land', shape: 'poly', pts: tplPin([[-80, -80], [W + 80, -80], [W + 80, H + 80], [-80, H + 80]], [[-80, -80], [W + 80, -80], [W + 80, H + 80], [-80, H + 80]])}])},
-  {id: 'kraitren', name: 'Північ Крайтрену', desc: 'Стартова мапа кампанії.',
+  {id: 'kraitren', name: 'Північ Крайтрену', desc: 'Приклад від автора: мапа з D&D-кампанії автора «Уже не ви».', example: true,
     data: window.DEFAULT_MAP},
 ];

@@ -131,4 +131,28 @@ kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padd
 .aiid{color:var(--muted);font-size:11px;margin-left:auto}
 .aierr,.aierrtxt{color:#ff9a8a;font-size:12px;margin-top:6px}
 body.ai-preview .bar .group,body.ai-preview .bar > .btn,body.ai-preview .bar h1,body.ai-preview #side,body.ai-preview #opts{pointer-events:none;opacity:.4}
+/* мова */
+html[lang="en"] [data-lang="uk"], html:not([lang="en"]) [data-lang="en"]{display:none}
+.flag{width:22px;height:15px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.35);flex:0 0 auto;display:block}
+.langbtn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:6px 8px}
+/* стартовий екран */
+#startModal{z-index:20;background:rgba(10,8,6,.72)}
+.startcard{max-width:760px}
+.starthead{display:flex;gap:14px;align-items:center;margin-bottom:10px}
+.startlogo{width:52px;height:52px;flex:0 0 auto}
+.apptitle{margin:0;font-size:22px;line-height:1.2;font-family:'Cormorant Garamond',Georgia,serif;font-weight:700;color:#f3e6c8}
+.startsub{margin:4px 0 0;color:var(--muted)}
+.startlang h3{margin:12px 0 10px;font-size:16px}
+.langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.langcard{display:flex;align-items:center;justify-content:center;gap:12px;padding:20px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);cursor:pointer;font-size:18px;font-weight:600;color:var(--text)}
+.langcard:hover{border-color:var(--accent)}
+.langcard .flag{width:42px;height:28px}
+.startcont{gap:8px}
+.startgo{display:inline-flex;gap:6px;align-items:center;max-width:100%}
+.startgo b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px}
+.starttpl{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.starttpl .tplcard{min-height:76px}
+.tplcard.example{border-color:#7a5a2c;background:linear-gradient(180deg,#3a3024,var(--panel2))}
+.badge{font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink);background:var(--accent);border-radius:4px;padding:1px 6px;align-self:flex-start;margin-bottom:2px}
+#startLangBtn{display:inline-flex;align-items:center;gap:8px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#2f2a24;border:1px solid var(--line);padding:8px 14px;border-radius:8px;display:none;z-index:20}

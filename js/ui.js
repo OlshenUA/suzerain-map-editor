@@ -99,7 +99,7 @@ async function openFile(){
 }
 // Файл .json відкривається як нова мапа в бібліотеці (поточна лишається як є).
 function loadMapText(txt, name){ try { const d = JSON.parse(txt); if (!d.shapes || !Array.isArray(d.shapes)) throw new Error('у файлі немає shapes');
-  if (!d.name) d.name = String(name || 'Мапа з файлу').replace(/.json$/i, ''); if (createMap(d)){ if (name) fileName = name; markSaved(); toast('Відкрито ' + (name || mapName(d))); } } catch (e) { toast('Це не схоже на файл мапи: ' + e.message); } }
+  if (!d.name) d.name = String(name || L('Мапа з файлу', 'Map from file')).replace(/.json$/i, ''); if (createMap(d)){ if (name) fileName = name; markSaved(); toast('Відкрито ' + (name || mapName(d))); } } catch (e) { toast('Це не схоже на файл мапи: ' + e.message); } }
 function initCaps(){ initLibrary(); }
 window.addEventListener('beforeunload', () => { if (saveTimer) saveCurrent(); });
 window.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){ e.preventDefault(); saveFile(e.shiftKey); } if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o'){ e.preventDefault(); openFile(); } });
@@ -249,7 +249,7 @@ view.addEventListener('pointerup', e => {
   if (d.type === 'pan' && !d.moved && tool === 'select'){ /* click on empty selects nothing */ const [sx, sy] = pos(e); const [x, y] = toWorld(sx, sy); const h = hitShape(x, y); if (!h && (selected || selObj) && !vmode){ selected = null; selObj = null; activeVertex = -1; renderSide(); draw(); } }
   if (d.type === 'exrect'){ const b = drawing && drawing.b; if (b && b[2] > 20 && b[3] > 20){ data.exportRect = {x: Math.round(b[0]), y: Math.round(b[1]), w: Math.round(b[2]), h: Math.round(b[3])}; changed(true); } drawing = null; setTool('select'); openExport(true); return; }
   if (d.type === 'textbox'){ let b = drawing && drawing.b; if (!b || b[2] < 30 / vs.scale || b[3] < 15 / vs.scale) b = [drawing.x0 - 180, drawing.y0 - 40, 360, 80];
-    pushUndo(); const t = {id: 'd' + (uid++), x: Math.round(b[0]), y: Math.round(b[1]), w: Math.round(b[2]), h: Math.round(b[3]), text: 'Новий напис', size: 36, font: 'Kurale', align: 'center', bg: false, italic: false, spacing: 0};
+    pushUndo(); const t = {id: 'd' + (uid++), x: Math.round(b[0]), y: Math.round(b[1]), w: Math.round(b[2]), h: Math.round(b[3]), text: L('Новий напис', 'New label'), size: 36, font: 'Kurale', align: 'center', bg: false, italic: false, spacing: 0};
     data.texts.push(t); selObj = {type: 'text', o: t}; selected = null; drawing = null; changed(true); setTool('select'); renderSide(); const ta = document.getElementById('tText'); if (ta){ ta.focus(); ta.select(); } return; }
   if (d.type === 'objmove' || d.type === 'objsize'){ if (d.dirty) changed(); else { undoStack.pop(); updateUndo(); } renderSide(); return; }
   if ((d.type === 'vertex' || d.type === 'move')){ if (d.dirty) changed(); else { undoStack.pop(); updateUndo(); } renderSide(); }
@@ -493,7 +493,7 @@ document.getElementById('exGo').addEventListener('click', async () => {
     else { const full = renderMap(sc, true, true); out = layer(Math.round(r.w*sc), Math.round(r.h*sc)); const og = out.getContext('2d'); og.drawImage(full, Math.round(r.x*sc), Math.round(r.y*sc), out.width, out.height, 0, 0, out.width, out.height);
       const cw2 = out.width, ch2 = out.height, vg = og.createRadialGradient(cw2/2, ch2/2, 0, cw2/2, ch2/2, Math.hypot(cw2, ch2)*.55); vg.addColorStop(.62, 'rgba(107,63,18,0)'); vg.addColorStop(.9, 'rgba(107,63,18,.22)'); vg.addColorStop(1, 'rgba(74,42,10,.42)'); og.fillStyle = vg; og.fillRect(0, 0, cw2, ch2);
       if (frame) drawFrameRect(og, out.width, out.height, sc); }
-    const blob = await new Promise(res => out.toBlob(res, 'image/png')); await dl.save({filename: fileSafe(mapName(data)) + (r ? ' (фрагмент).png' : '.png'), data: blob}); toast('PNG збережено'); }
+    const blob = await new Promise(res => out.toBlob(res, 'image/png')); await dl.save({filename: fileSafe(mapName(data)) + (r ? L(' (фрагмент).png', ' (fragment).png') : '.png'), data: blob}); toast('PNG збережено'); }
   catch (e) { if (!(e && e.code === 'declined')) toast('Не вдалося експортувати: ' + (e && (e.message || e.code) || e)); }
   busy.style.display = 'none'; busy.textContent = 'Перемальовую…'; });
 
@@ -503,6 +503,14 @@ let stageLeft = stage.getBoundingClientRect().left;
 new ResizeObserver(() => { const r = stage.getBoundingClientRect(); const dl = stageLeft == null ? 0 : r.left - stageLeft; stageLeft = r.left;
   resize(); if (dl){ vs.ox -= dl; draw(); } else if (autoFit) fit(); }).observe(stage);
 setKind('mountain'); setTool('select'); updateUndo(); initLibraryUI(); initAI();
+// мова: прапорець у куті перемикає українську / англійську; панелі перебудовуються, решту перекладає i18n.js
+function renderLangBtn(){ const b = document.getElementById('langBtn'); b.innerHTML = flagSvg(lang()) + '<span>' + (lang() === 'en' ? 'EN' : 'UA') + '</span>'; }
+document.getElementById('langBtn').addEventListener('click', () => setLang(lang() === 'en' ? 'uk' : 'en'));
+window.addEventListener('langchange', () => { renderLangBtn(); if (!currentMapId) data.name = L('Північ Крайтрену', 'Northern Kraitren'); // приклад за стартовим екраном ще не збережено
+  renderSide(); updateTitle(); if (isOpen('libModal')) renderLibrary(); if (isOpen('newModal')){ renderTplGrid(); syncSizeSelect(); } if (isOpen('aiModal')) aiUpdateInfo(); if (aiPreview) aiRenderBar(); });
+renderLangBtn();
 resize(); fit(); renderSide(); scheduleRender(0);
 if (document.fonts){ Promise.all(FONTS.map(([f]) => document.fonts.load(`36px "${f}"`).catch(() => {}))).then(() => draw()); }
 initCaps();
+if (lang() === 'en') setLang('en'); // перекласти вже наявну розмітку
+initStart();

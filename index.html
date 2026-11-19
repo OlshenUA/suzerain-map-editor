@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Редактор мап — Крайтрен</title>
-<meta name="description" content="Редактор мап у стилі чорнила на пергаменті для світу Сюзеренату">
+<title>Сюзерен: Безкоштовний Редактор Фентезі Мап</title>
+<meta name="description" content="Сюзерен — безкоштовний редактор фентезі-мап у стилі чорнила на пергаменті. Suzerain — a free ink-on-parchment fantasy map editor.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Kurale&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ruslan+Display&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=24">
+<link rel="stylesheet" href="css/style.css?v=30">
 </head>
 <body>
 <div class="app">
   <div class="bar" role="toolbar" aria-label="Інструменти">
-    <h1><button class="maptitle" id="mapTitleBtn" title="Мої мапи">Північ Крайтрену</button></h1>
+    <h1><button class="maptitle" id="mapTitleBtn" title="Мої мапи" data-noi18n></button></h1>
     <div class="group" id="tools">
       <button class="btn" data-tool="select" aria-pressed="true">Вибір</button>
       <button class="btn" data-tool="poly" aria-pressed="false">Полігон</button>
@@ -36,6 +36,7 @@
     <button class="btn solid" id="exportBtn">Експорт PNG</button>
     <button class="btn primary" id="saveBtn" title="Зберегти у файл .json (Ctrl+S, Ctrl+Shift+S — як новий файл). Мапи й так автоматично зберігаються в браузері.">Зберегти</button>
     <button class="btn solid helpbtn" id="helpBtn" title="Підказки (F1)" aria-label="Підказки">?</button>
+    <button class="btn solid langbtn" id="langBtn" title="Мова / Language" aria-label="Мова / Language" data-noi18n></button>
   </div>
   <div class="main">
     <aside class="opts" id="opts" aria-label="Опції й налаштування" hidden>
@@ -174,8 +175,26 @@
     <div class="btns"><span class="spacer"></span><button class="btn solid" id="aiClose">Закрити</button><button class="btn primary" id="aiPreviewBtn">Переглянути зміни</button></div>
   </div>
 </div>
+<div class="modal" id="startModal" role="dialog" aria-modal="true" aria-labelledby="startTitle">
+  <div class="card wide startcard">
+    <div class="starthead"><img class="startlogo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M8 52 L24 20 L34 36 L42 26 L56 52 Z' fill='%23efe2bd' stroke='%23d39a4a' stroke-width='3' stroke-linejoin='round'/%3E%3Cpath d='M30 12 v10 M25 17 h10' stroke='%23d39a4a' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E" alt="">
+      <div><h2 id="startTitle" class="apptitle" data-noi18n></h2><p class="startsub" id="startSub" data-noi18n></p></div></div>
+    <div id="startLang" class="startlang" data-noi18n>
+      <h3>Оберіть мову · Choose your language</h3>
+      <div class="langpick"><button class="langcard" data-pick="uk"></button><button class="langcard" data-pick="en"></button></div>
+    </div>
+    <div id="startMain">
+      <div class="btns startcont" id="startCont"></div>
+      <h3 style="margin:14px 0 4px">Створити нову мапу</h3>
+      <p>Оберіть шаблон — назву й розмір уточните на наступному кроці.</p>
+      <div class="tplgrid starttpl" id="startTpl"></div>
+      <div class="btns" style="margin-top:12px;align-items:center"><span class="help" style="padding:0">Мапи зберігаються лише у вашому браузері й ваших файлах.</span><span class="spacer"></span><button class="btn solid" id="startLangBtn" data-noi18n></button></div>
+    </div>
+  </div>
+</div>
 <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
   <div class="card wide">
+    <div data-lang="uk" data-noi18n>
     <h3 id="helpTitle">Як користуватися редактором</h3>
     <h4>Основне</h4>
     <ul class="help">
@@ -217,21 +236,67 @@
       <li>«Змінити межі…» у бічній панелі (коли нічого не вибрано) — розширити чи обрізати мапу з будь-якого боку.</li>
       <li>Кожна зміна автоматично зберігається в браузері. «Зберегти» (<kbd>Ctrl+S</kbd>) — копія в JSON-файл; <kbd>Ctrl+O</kbd> — відкрити файл як нову мапу.</li>
     </ul>
+    </div>
+    <div data-lang="en">
+    <h3>How to use the editor</h3>
+    <h4>Basics</h4>
+    <ul class="help">
+      <li><b>Select</b> (<kbd>V</kbd>): click a zone to select it, drag its vertices. You can drag a selected zone as a whole.</li>
+      <li>Empty space — drag the map, wheel — zoom, <kbd>Space</kbd>+drag — pan as well.</li>
+      <li><b>Polygon</b> (<kbd>P</kbd>) and <b>Ellipse</b> (<kbd>O</kbd>): in the left panel choose what you draw — land, lake, mountains, forest, generation area…</li>
+      <li><b>Brush</b> (<kbd>B</kbd>): drag to paint an area of the type selected on the left. <kbd>[</kbd> <kbd>]</kbd> — size, <kbd>Alt</kbd> or “Erase” — eraser. Strokes of one type merge into one shape; erasing in the middle of land makes a lake.</li>
+      <li><b>Landscape</b> — snow, tundra, steppe, fields (damp temperate grassland), hills, marsh, desert: draw with polygon, ellipse or brush. Marks appear only on land.</li>
+      <li><b>Forest</b>: tree type (conifers, broadleaf, mixed, palms, jungle, dead trees) is in the forest settings; a new forest uses the type chosen last.</li>
+      <li><b>Curve</b> (<kbd>R</kbd>): river, road, railway or dashed trail — pick the type in the left panel. Click points, double-click or <kbd>Enter</kbd> to finish. Points near another river, lake or coast (for roads — near other routes and stamps) snap to them (orange circle), <kbd>Shift</kbd> — no snapping.</li>
+      <li><kbd>Delete</kbd> — delete the zone or the selected vertex, <kbd>Ctrl+Z</kbd> — undo.</li>
+      <li>New land that overlaps old land merges into one coastline.</li>
+    </ul>
+    <h4>Stamps, labels and routes</h4>
+    <ul class="help">
+      <li>“Stamp” (<kbd>S</kbd>) — pick a look in the left panel and click on the map.</li>
+      <li>“Text” (<kbd>T</kbd>) — drag a frame.</li>
+      <li>Roads, railways and trails are drawn with the “Curve”; their ends snap to other routes and stamps.</li>
+      <li>Stamps and labels can be dragged; resize them with the orange square in the corner.</li>
+    </ul>
+    <h4>Generating streams, ponds and marshes</h4>
+    <ul class="help">
+      <li>Draw a polygon or ellipse of type “Generation area”, select it — and generate ponds, streams and marshes in it separately.</li>
+    </ul>
+    <h4>Outlines and selection</h4>
+    <ul class="help">
+      <li>The mouse selects only the types enabled in the side panel. If outlines are off, zones cannot be selected.</li>
+    </ul>
+    <h4>AI</h4>
+    <ul class="help">
+      <li>The “AI” button: describe the changes (“make this land bigger”, “add snow in the north”), press “Copy for AI” and paste it into any AI chat. A shape selected on the map is included in the request.</li>
+      <li>Paste the AI reply into the field and press “Preview changes”. Changes are highlighted: <span style="color:#ffb02e">changed</span>, <span style="color:#5fd068">added</span>, <span style="color:#ff5a4a">deleted</span>. “Before / After” (or <kbd>C</kbd>) — compare; you can pan and zoom the map.</li>
+      <li>“Save” — accept (undo with “Undo”), “Reset” — back to how it was. The format for AI: AI.en.md in the repository.</li>
+    </ul>
+    <h4>Maps and files</h4>
+    <ul class="help">
+      <li>“Maps” or a click on the name at the top left — your map list: open, rename, copy, delete, “As template”.</li>
+      <li>“New map…” — name, template (blank sheet, island, coast, your templates…) and size.</li>
+      <li>“Change borders…” in the side panel (when nothing is selected) — expand or crop the map on any side.</li>
+      <li>Every change is saved automatically in the browser. “Save” (<kbd>Ctrl+S</kbd>) — a copy to a JSON file; <kbd>Ctrl+O</kbd> — open a file as a new map.</li>
+    </ul>
+    </div>
     <div class="btns" style="margin-top:14px"><span class="spacer"></span><button class="btn primary" id="helpClose">Зрозуміло</button></div>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
 
-<script src="js/default-map.js?v=24"></script>
-<script src="js/core.js?v=24"></script>
-<script src="js/render.js?v=24"></script>
-<script src="js/nature.js?v=24"></script>
-<script src="js/generators.js?v=24"></script>
-<script src="js/templates.js?v=24"></script>
-<script src="js/library.js?v=24"></script>
-<script src="js/brush.js?v=24"></script>
-<script src="js/ai.js?v=24"></script>
-<script src="js/ui.js?v=24"></script>
+<script src="js/i18n.js?v=30"></script>
+<script src="js/i18n-en.js?v=30"></script>
+<script src="js/default-map.js?v=30"></script>
+<script src="js/core.js?v=30"></script>
+<script src="js/render.js?v=30"></script>
+<script src="js/nature.js?v=30"></script>
+<script src="js/generators.js?v=30"></script>
+<script src="js/templates.js?v=30"></script>
+<script src="js/library.js?v=30"></script>
+<script src="js/brush.js?v=30"></script>
+<script src="js/ai.js?v=30"></script>
+<script src="js/ui.js?v=30"></script>
 </body>
 </html>
