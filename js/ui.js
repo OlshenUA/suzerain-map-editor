@@ -117,7 +117,7 @@ const OPTS_TITLE = {poly: 'Що малювати', ellipse: 'Що малюват
 // Ліва панель: опції активного інструмента та/або налаштування вибраного об'єкта.
 function updateLeftPanel(){ const opts = document.getElementById('opts'), to = document.getElementById('toolOpts'); const hasTool = !!OPTS_TITLE[tool], hasObj = !!(selected || selObj);
   to.hidden = !hasTool; objPanel.hidden = !hasObj; opts.hidden = !hasTool && !hasObj;
-  if (hasTool){ document.getElementById('optsTitle').textContent = OPTS_TITLE[tool]; for (const l of opts.querySelectorAll('.optlist')) l.hidden = !l.dataset.for.split(' ').includes(tool); const tb = document.getElementById('treeBar'); if (newKind !== 'forest') tb.hidden = true; } }
+  if (hasTool){ document.getElementById('optsTitle').textContent = OPTS_TITLE[tool]; for (const l of opts.querySelectorAll('.optlist')) l.hidden = !l.dataset.for.split(' ').includes(tool); } }
 function setTool(t){ tool = t; drawing = null; for (const b of toolsEl.children) b.setAttribute('aria-pressed', String(b.dataset.tool === t));
   updateLeftPanel(); if (t !== 'brush'){ brushCursor = null; brushStroke = null; } else renderBrushOpts();
   view.style.cursor = t === 'select' ? 'default' : 'crosshair'; draw(); }
@@ -126,8 +126,6 @@ function setKind(k, t){ newKind = k; if (k === 'terrain' && t) newTerrain = t;
   updateLeftPanel(); draw(); }
 toolsEl.addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
 kindsEl.addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) setKind(b.dataset.kind, b.dataset.terrain); });
-document.getElementById('treeSel').innerHTML = Object.entries(TREE_TYPES).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('');
-document.getElementById('treeSel').addEventListener('change', e => { newTrees = e.target.value; });
 document.getElementById('brushBar').addEventListener('click', e => { const b = e.target.closest('[data-bmode]'); if (b) setBrushErase(b.dataset.bmode === 'erase'); });
 
 function shapeArea(s){ return s.shape === 'ellipse' ? Math.PI * s.rx * s.ry : polyArea(s.pts); }

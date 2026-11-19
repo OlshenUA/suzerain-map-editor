@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Kurale&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,500&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Ruslan+Display&family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=20">
+<link rel="stylesheet" href="css/style.css?v=22">
 </head>
 <body>
 <div class="app">
@@ -43,7 +43,6 @@
       <div class="optlist" id="brushBar" data-for="brush">
         <div class="seg"><button class="btn" data-bmode="paint" aria-pressed="true">Малювати</button><button class="btn" data-bmode="erase" aria-pressed="false">Стирати</button></div>
         <div id="brushSize"></div>
-        <p class="help" style="padding:0;margin:0 0 6px">Тягніть по мапі. <kbd>[</kbd> <kbd>]</kbd> — розмір, <kbd>Alt</kbd> — стерти. Мазки одного типу зливаються в одну фігуру.</p>
       </div>
       <div class="optlist" id="kinds" data-for="poly ellipse brush">
         <button class="btn" data-kind="land" aria-pressed="false">Суша</button>
@@ -54,6 +53,7 @@
         <button class="btn" data-kind="terrain" data-terrain="snow" aria-pressed="false">Сніг</button>
         <button class="btn" data-kind="terrain" data-terrain="tundra" aria-pressed="false">Тундра</button>
         <button class="btn" data-kind="terrain" data-terrain="steppe" aria-pressed="false">Степ</button>
+        <button class="btn" data-kind="terrain" data-terrain="meadow" aria-pressed="false">Поля</button>
         <button class="btn" data-kind="terrain" data-terrain="hills" aria-pressed="false">Пагорби</button>
         <button class="btn" data-kind="terrain" data-terrain="marsh" aria-pressed="false">Болото</button>
         <button class="btn" data-kind="terrain" data-terrain="desert" aria-pressed="false">Пустеля</button>
@@ -63,9 +63,6 @@
         <button class="btn" data-kind="fort" aria-pressed="false">Фортеця</button>
         <button class="btn" data-kind="stain" aria-pressed="false">Пляма</button>
         <button class="btn" data-kind="region" aria-pressed="false">Область генерації</button>
-      </div>
-      <div class="optlist" id="treeBar" data-for="poly ellipse brush">
-        <div class="row" style="margin:8px 0 0"><label for="treeSel">Дерева в новому лісі</label><select id="treeSel"></select></div>
       </div>
       <div class="optlist" id="curveBar" data-for="curve">
         <button class="btn" data-curve="river" aria-pressed="true">Річка</button>
@@ -165,8 +162,8 @@
       <li>Порожнє місце — тягнути мапу, колесо — масштаб, <kbd>Пробіл</kbd>+тягнути — теж зсув.</li>
       <li><b>Полігон</b> (<kbd>P</kbd>) і <b>Овал</b> (<kbd>O</kbd>): у панелі ліворуч оберіть, що малюєте — сушу, озеро, гори, ліс, область генерації…</li>
       <li><b>Пензель</b> (<kbd>B</kbd>): тягніть, щоб замалювати область того типу, що вибрано ліворуч. <kbd>[</kbd> <kbd>]</kbd> — розмір, <kbd>Alt</kbd> або «Стирати» — гумка. Мазки одного типу зливаються в одну фігуру; стерте посеред суші стає озером.</li>
-      <li><b>Ландшафт</b> — сніг, тундра, степ, пагорби, болото, пустеля: малюйте полігоном, овалом чи пензлем. Позначки ставляться лише на суші.</li>
-      <li><b>Ліс</b>: вид дерев (хвойні, листяні, мішані, пальми, джунглі, сухостій) — у налаштуваннях лісу; для нових лісів — у панелі ліворуч.</li>
+      <li><b>Ландшафт</b> — сніг, тундра, степ, поля (вогкі трав’яні луки помірного клімату), пагорби, болото, пустеля: малюйте полігоном, овалом чи пензлем. Позначки ставляться лише на суші.</li>
+      <li><b>Ліс</b>: вид дерев (хвойні, листяні, мішані, пальми, джунглі, сухостій) — у налаштуваннях лісу; новий ліс бере вид, вибраний останнім.</li>
       <li><b>Крива</b> (<kbd>R</kbd>): річка, дорога, залізниця чи пунктирний шлях — вид обирається в панелі ліворуч. Клікайте точки, подвійний клік або <kbd>Enter</kbd> — завершити. Точки біля іншої річки, озера чи берега (для доріг — біля інших шляхів і штампів) прилипають до них (помаранчеве коло), <kbd>Shift</kbd> — без прилипання.</li>
       <li><kbd>Delete</kbd> — видалити зону або вибрану вершину, <kbd>Ctrl+Z</kbd> — скасувати.</li>
       <li>Нова суша, що перекриває стару, зливається з нею в одне узбережжя.</li>
@@ -199,14 +196,14 @@
 <div class="toast" id="toast" role="status"></div>
 
 
-<script src="js/default-map.js?v=20"></script>
-<script src="js/core.js?v=20"></script>
-<script src="js/render.js?v=20"></script>
-<script src="js/nature.js?v=20"></script>
-<script src="js/generators.js?v=20"></script>
-<script src="js/templates.js?v=20"></script>
-<script src="js/library.js?v=20"></script>
-<script src="js/brush.js?v=20"></script>
-<script src="js/ui.js?v=20"></script>
+<script src="js/default-map.js?v=22"></script>
+<script src="js/core.js?v=22"></script>
+<script src="js/render.js?v=22"></script>
+<script src="js/nature.js?v=22"></script>
+<script src="js/generators.js?v=22"></script>
+<script src="js/templates.js?v=22"></script>
+<script src="js/library.js?v=22"></script>
+<script src="js/brush.js?v=22"></script>
+<script src="js/ui.js?v=22"></script>
 </body>
 </html>

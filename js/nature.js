@@ -4,7 +4,7 @@
 
 // ================= довідники =================
 const TREE_TYPES = {
-  conifer:   {name: 'Хвойні (ялини)', space: 1},
+  conifer:   {name: 'Хвойні', space: 1},
   broadleaf: {name: 'Листяні', space: 1.35},
   mixed:     {name: 'Мішані', space: 1.18},
   palm:      {name: 'Пальми', space: 1.3},
@@ -15,6 +15,7 @@ const TERRAINS = {
   snow:   {name: 'Сніг', color: '#dfe9ff'},
   tundra: {name: 'Тундра', color: '#8fd1bd'},
   steppe: {name: 'Степ', color: '#e6cf6e'},
+  meadow: {name: 'Поля', color: '#9ccc65'},
   hills:  {name: 'Пагорби', color: '#d9a066'},
   marsh:  {name: 'Болото', color: '#c49be8'},
   desert: {name: 'Пустеля', color: '#f4a742'},
@@ -102,6 +103,17 @@ function drawGrass(g, x, y, s, seedv){
   for (let i = 0; i < k; i++){ const t = k === 1 ? 0 : i / (k - 1) - .5; const bx = x + t * s * .5, tx = x + t * s * 1.3 + (R() - .5) * s * .2, ty = y - s * (.65 + R()*.4) * (1 - Math.abs(t) * .5); g.moveTo(bx, y); g.quadraticCurveTo(bx + (tx - bx) * .2, y - s * .4, tx, ty); }
   g.lineWidth = .75; g.globalAlpha = .85; g.stroke(); g.globalAlpha = 1;
 }
+// Поля: густі низькі пучки трави з вогкими рисками біля землі (помірний клімат, на відміну від сухого степу).
+function drawMeadow(g, x, y, s, seedv){
+  const R = rng(seedv); const wind = (R() < .5 ? -1 : 1) * s * (.25 + R()*.2); const k = 4 + (R()*3 | 0);
+  g.strokeStyle = INK; g.lineCap = 'round'; g.beginPath();
+  for (let i = 0; i < k; i++){ const t = i / (k - 1) - .5; const bx = x + t * s * 1.7 + (R() - .5) * s * .2; const hh = s * (1 - Math.abs(t) * .7) * (.75 + R()*.35);
+    const lean = wind * (hh / s) + (R() - .5) * s * .12; g.moveTo(bx, y); g.quadraticCurveTo(bx + lean * .15, y - hh * .55, bx + lean, y - hh); }
+  g.lineWidth = .65; g.globalAlpha = .85; g.stroke();
+  // вогкість: дві короткі риски під пучком
+  g.beginPath(); g.moveTo(x - s * 1.1, y + 1.6); g.lineTo(x - s * .35, y + 1.6); g.moveTo(x + s * .05, y + 2.8); g.lineTo(x + s * .9, y + 2.8);
+  g.lineWidth = .55; g.globalAlpha = .45; g.stroke(); g.globalAlpha = 1;
+}
 function drawStone(g, x, y, s){ g.beginPath(); g.ellipse(x, y - s * .5, s, s * .62, 0, 0, Math.PI * 2); g.fillStyle = PAPER_L; g.fill(); g.strokeStyle = INK; g.lineWidth = .7; g.stroke(); }
 
 // ================= розміщення позначок ландшафту =================
@@ -143,6 +155,11 @@ function placeGround(geo, c){
         if (r < .16){ if (!c.free(x, y, 9)) continue; c.glyphs.push({y, t: 'gr', x, s: 4.5 + R()*2.5, r: (R()*1e9) | 0}); c.mark(x, y, 8); }
         else if (r < .26){ if (!c.free(x, y, 6)) continue; dash.push([x, y, 4 + R()*5]); c.mark(x, y, 3); }
         else if (r < .34 && c.free(x, y, 4)) stip.push([x, y]); } }
+    else if (t === 'meadow'){ const {n, rnd} = zoneSamples(z, 150, 70000, R);
+      for (let i = 0; i < n; i++){ const [x, y] = rnd(); if (!inFrame(x, y) || !inside(z, x, y) || !c.landAt(x, y, 6)) continue; const r = R();
+        if (r < .24){ if (!c.free(x, y, 10)) continue; c.glyphs.push({y, t: 'mw', x, s: 4.5 + R()*2.5, r: (R()*1e9) | 0}); c.mark(x, y, 8); }
+        else if (r < .32){ if (!c.free(x, y, 5)) continue; dash.push([x, y, 3 + R()*4]); c.mark(x, y, 3); }
+        else if (r < .38 && c.free(x, y, 3)) stip.push([x, y]); } }
     else if (t === 'desert'){ { const {n, rnd} = zoneSamples(z, 2400, 4000, R);
         for (let i = 0; i < n; i++){ const [x, y] = rnd(); const s = 12 + R()*14; if (!inFrame(x, y) || !inside(z, x, y) || !c.landAt(x, y, 10) || !c.free(x, y, s * .9)) continue;
           c.glyphs.push({y, t: 'du', x, s, r: (R()*1e9) | 0}); c.mark(x, y, s * .9); } }
@@ -158,6 +175,7 @@ function drawNatureGlyph(g, o){
   else if (o.t === 'du') drawDune(g, o.x, o.y, o.s, o.r);
   else if (o.t === 'gr') drawGrass(g, o.x, o.y, o.s, o.r);
   else if (o.t === 'gs') drawGrass(g, o.x, o.y, o.s, o.r);
+  else if (o.t === 'mw') drawMeadow(g, o.x, o.y, o.s, o.r);
   else if (o.t === 'st') drawStone(g, o.x, o.y, o.s);
   else return false;
   return true;
