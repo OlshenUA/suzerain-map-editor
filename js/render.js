@@ -156,7 +156,7 @@ const STAMPS = {
   compass: {name: 'Роза вітрів', size: 210}, house: {name: 'Будинок', size: 40}, manor: {name: 'Маєток', size: 64}, 
   tower: {name: 'Вежа', size: 54}, ruins: {name: 'Руїни', size: 56}, cave: {name: 'Печера / шахта', size: 56},
   camp: {name: 'Табір', size: 54}, warehouse: {name: 'Склад / комплекс', size: 70}, banner: {name: 'Стяг', size: 50},
-  sigil: {name: 'Трикутник (Новий Сюзеренат)', size: 56}, poppy: {name: 'Мак', size: 44}, poi: {name: 'Мітка', size: 28}
+  sigil: {name: 'Трикутник (Новий Сюзеренат)', size: 56}, poppy: {name: 'Мак', size: 44}, arrow: {name: 'Стрілка', size: 70}, poi: {name: 'Мітка', size: 28}
 };
 // ---- stamp artwork: 100-unit box centred on (0,0), ground line around y = +38 ----
 function stampKit(g, u){
@@ -355,6 +355,15 @@ const STAMP_ART = {
     K.line([[-3, 39], [-8, 52]], .8, .8); K.line([[3, 39], [8, 52]], .8, .8);
     g.beginPath(); for (let x = -50; x <= 50; x += 3.2){ if (Math.abs(x) < 10) continue; g.moveTo(x, 46); g.arc(x, 46, 1.6, Math.PI, 0); } g.lineWidth = K.L(.8); g.strokeStyle = INK; g.stroke();
     K.face([[-11, 47], [-11, 40], [-9, 40], [-9, 47]], PAPER_L, .8); K.face([[9, 47], [9, 40], [11, 40], [11, 47]], PAPER_L, .8); },
+  arrow(g, K){ // bold marker arrow pointing down at rot 0; swallowtail end, engraved ridge, right half hatched
+    const P = [[0, 48], [-34, 6], [-22, 4], [-11, 12], [-9, -28], [-20, -48], [0, -37], [20, -48], [9, -28], [11, 12], [22, 4], [34, 6]];
+    K.path(P, true); g.fillStyle = PAPER_L; g.fill();
+    K.clipTo(P, () => { K.hatch([[0, -60], [40, -60], [40, 60], [0, 60]], -1.0, 2.2, .7); K.hatch([[0, 0], [40, 0], [40, 60], [0, 60]], -1.0, 1.5, .6, .55); });
+    K.path(P, true); g.lineWidth = K.L(2.6); g.strokeStyle = INK; g.stroke();
+    K.line([[0, 42], [0, -33]], 1, .9); // ridge
+    K.line([[-27, 8], [-4, 37]], .8, .7); K.line([[-5, -27], [-5, 8]], .7, .55); K.line([[-15, -42], [-6, -32]], .7, .6); // inner engraving on the lit side
+    for (const y of [-22, -16, -10]) K.line([[-9, y], [9, y]], .9, .85); // binding marks
+  },
   poi(g, K){ g.beginPath(); g.arc(0, 0, 30, 0, Math.PI*2); g.fillStyle = PAPER_L; g.fill(); g.lineWidth = K.L(2.2); g.strokeStyle = INK; g.stroke(); g.beginPath(); g.arc(0, 0, 21, 0, Math.PI*2); g.lineWidth = K.L(1); g.stroke(); g.beginPath(); g.arc(0, 0, 8, 0, Math.PI*2); g.fillStyle = INK; g.fill(); }
 };
 

@@ -9,7 +9,7 @@ Object.assign(EN, {
   'Сніг': 'Snow', 'Тундра': 'Tundra', 'Степ': 'Steppe', 'Поля': 'Fields', 'Пагорби': 'Hills', 'Пустеля': 'Desert',
   'Хвойні': 'Conifers', 'Листяні': 'Broadleaf', 'Мішані': 'Mixed', 'Пальми': 'Palms', 'Джунглі': 'Jungle', 'Сухостій / мертвий ліс': 'Dead trees',
   'Роза вітрів': 'Compass rose', 'Будинок': 'House', 'Маєток': 'Manor', 'Вежа': 'Tower', 'Руїни': 'Ruins', 'Печера / шахта': 'Cave / mine',
-  'Табір': 'Camp', 'Склад / комплекс': 'Warehouse / complex', 'Стяг': 'Banner', 'Трикутник (Новий Сюзеренат)': 'Triangle (New Suzerainty)', 'Мак': 'Poppy', 'Мітка': 'Marker',
+  'Табір': 'Camp', 'Склад / комплекс': 'Warehouse / complex', 'Стяг': 'Banner', 'Стрілка': 'Arrow', 'Трикутник (Новий Сюзеренат)': 'Triangle (New Suzerainty)', 'Мак': 'Poppy', 'Мітка': 'Marker',
   'Залізо-жовчне': 'Iron gall', 'Сепія': 'Sepia', 'Кіновар': 'Cinnabar', 'Кров’яне': 'Blood', 'Малахіт': 'Malachite', 'Болотяне': 'Bog green',
   'Індиго': 'Indigo', 'Берлінська лазур': 'Prussian blue', 'Охра': 'Ochre', 'Пурпур': 'Purple', 'Сажа': 'Soot', 'Іржа': 'Rust',
   'полігон': 'polygon', 'овал': 'ellipse',
