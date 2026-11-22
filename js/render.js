@@ -374,8 +374,7 @@ function drawStamp(g, st){
     (STAMP_ART[st.type] || STAMP_ART.poi)(g, stampKit(g, u));
   }
   g.restore();
-  if (st.label){ g.save(); const fs = st.labelSize || 22; g.font = `${fs}px "${st.labelFont || 'Kurale'}", serif`; g.textAlign = 'center'; g.textBaseline = 'top';
-    const ly = st.y + (st.type === 'compass' ? s*.62 : s*.5) + 4; g.lineJoin = 'round'; g.strokeStyle = 'rgba(239,226,189,.95)'; g.lineWidth = fs*.28; g.strokeText(st.label, st.x, ly); g.fillStyle = INK; g.fillText(st.label, st.x, ly); g.restore(); }
+  if (st.label){ const r = st.type === 'compass' ? s*.62 : s*.5; drawLabelBeside(g, st, [st.x - r, st.y - r, st.x + r, st.y + r], labelPosOf(st, true), st.labelSize || 22, 4); } // labels.js
 }
 function stampBox(st){ const s = st.size; const r = st.type === 'compass' ? s*.62 : s*.55; return [st.x - r, st.y - r, st.x + r, st.y + r]; }
 function wrapLines(g, text, maxW){ const out = []; for (const para of String(text || '').split('\n')){ const words = para.split(/\s+/); let line = '';
@@ -390,7 +389,7 @@ function drawTextBox(g, t){
   for (const ln of lines){ if (!t.bg){ g.lineJoin = 'round'; g.strokeStyle = 'rgba(239,226,189,.92)'; g.lineWidth = fs*.22; g.strokeText(ln, x, y); } g.fillStyle = INK; g.fillText(ln, x, y); y += lh; }
   g.restore();
 }
-function drawDecor(g){ for (const st of data.stamps || []) drawStamp(g, st); for (const t of data.texts || []) drawTextBox(g, t); }
+function drawDecor(g){ drawShapeLabels(g); for (const st of data.stamps || []) drawStamp(g, st); for (const t of data.texts || []) drawTextBox(g, t); }
 function hitDecor(x, y){ const ts = visibleKinds.text === false ? [] : (data.texts || []); for (let i = ts.length - 1; i >= 0; i--){ const t = ts[i]; if (x >= t.x && x <= t.x + t.w && y >= t.y && y <= t.y + t.h) return {type: 'text', o: t}; }
   const ss = visibleKinds.stamp === false ? [] : (data.stamps || []); for (let i = ss.length - 1; i >= 0; i--){ const s = ss[i]; const r = Math.max(s.type === 'compass' ? s.size*.55 : s.size*.5, 10 / vs.scale); if (Math.hypot(x - s.x, y - s.y) <= r) return {type: 'stamp', o: s}; } return null; }
 function decorHandle(so){ if (so.type === 'text') return [so.o.x + so.o.w, so.o.y + so.o.h]; const b = stampBox(so.o); return [b[2], b[3]]; }

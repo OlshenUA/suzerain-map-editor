@@ -32,9 +32,10 @@ shapes: [{id, kind, shape: 'poly'|'ellipse'|'line', pts: [[x,y],...] (or cx, cy,
 - region — generation area (not drawn)
 - river (shape 'line') — river: width 1–30 (up to 4.5 a single line), taper
 - road / rail / path (shape 'line') — road / railway / dashed trail: width 0.4–3
-stamps: [{id, type, x, y, size, rot, label, labelSize}]; type = ${stamps}
+stamps: [{id, type, x, y, size, rot, label, labelPos, labelSize}]; type = ${stamps}
 texts: [{id, x, y, w, h, text, size, font, align, bg, italic, bold}]
 settings: {scatter (0–3, single trees), scatterTrees}
+Labels: any shape or stamp can have label (text), labelSize, labelFont, labelItalic. Zones and stamps: labelPos = below | above | left | right; zones also inside (the text spreads along the zone, labelSpread 0–2). Curves (river, road…): the text follows the line, labelPos = above | below, labelAt 0–1 (where along it), labelSpread 0–40 (letter spacing, px).
 
 ## How to reply
 Briefly explain what you changed and give EXACTLY ONE \`\`\`map-patch block with a JSON array of operations. Do not return the whole map.
@@ -56,9 +57,10 @@ shapes: [{id, kind, shape: 'poly'|'ellipse'|'line', pts: [[x,y],...] (або cx,
 - region — область генерації (не малюється)
 - river (shape 'line') — річка: width 1–30 (до 4.5 — одна лінія), taper
 - road / rail / path (shape 'line') — дорога / залізниця / пунктирний шлях: width 0.4–3
-stamps: [{id, type, x, y, size, rot, label, labelSize}]; type = ${stamps}
+stamps: [{id, type, x, y, size, rot, label, labelPos, labelSize}]; type = ${stamps}
 texts: [{id, x, y, w, h, text, size, font, align, bg, italic, bold}]
 settings: {scatter (0–3, окремі дерева), scatterTrees}
+Підписи: будь-яка фігура чи штамп може мати label (текст), labelSize, labelFont, labelItalic. Зони й штампи: labelPos = below | above | left | right; зони ще inside (текст розходиться вздовж зони, labelSpread 0–2). Криві (river, road…): текст іде вздовж лінії, labelPos = above | below, labelAt 0–1 (де вздовж), labelSpread 0–40 (розрядка, px).
 
 ## Як відповісти
 Коротко поясніть, що змінено, і дайте РІВНО ОДИН блок \`\`\`map-patch з JSON-масивом операцій. Не повертайте всю мапу.

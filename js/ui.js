@@ -368,6 +368,7 @@ function renderDecorSide(side){
     h += `<div class="row"><label for="dType">Вигляд</label><select id="dType">${(STAMPS[o.type] ? '' : `<option value="${o.type}" selected>${o.type}</option>`) + Object.entries(STAMPS).map(([k, v]) => `<option value="${k}" ${k === o.type ? 'selected' : ''}>${v.name}</option>`).join('')}</select></div>`;
     h += slider('Розмір', 'size', 10, 420, 1, o) + (o.type === 'compass' ? '' : slider('Поворот', 'rot', -180, 180, 1, o));
     h += `<div class="row"><label for="dLabel">Підпис під штампом</label><input type="text" id="dLabel" value="${(o.label || '').replace(/"/g, '&quot;')}" placeholder="Без підпису" style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-height:36px"></div>`;
+    h += `<div class="row"><label for="dLabelPos">Де підпис</label><select id="dLabelPos">${LABEL_POS_STAMP.map(([v, n]) => `<option value="${v}" ${v === labelPosOf(o, true) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
     if (o.labelSize == null) o.labelSize = 22; h += slider('Розмір підпису', 'labelSize', 10, 80, 1, o);
     if (o.type !== 'compass') h += `<label class="check"><input type="checkbox" id="dHalo" ${o.halo !== false ? 'checked' : ''}> Світлий фон під штампом</label><label class="check"><input type="checkbox" id="dClear" ${o.clear !== false ? 'checked' : ''}> Прибирати гори й дерева під штампом</label>`;
   } else {
@@ -387,6 +388,7 @@ function renderDecorSide(side){
   if (q('dHalo')) q('dHalo').addEventListener('change', e => { pushUndo(); o.halo = e.target.checked; changed(true); });
   if (q('dClear')) q('dClear').addEventListener('change', e => { pushUndo(); o.clear = e.target.checked; changed(); });
   if (q('dLabel')) once(q('dLabel'), 'input', () => { o.label = q('dLabel').value; changed(true); });
+  if (q('dLabelPos')) q('dLabelPos').addEventListener('change', e => { pushUndo(); o.labelPos = e.target.value; changed(true); });
   if (q('tText')) once(q('tText'), 'input', () => { o.text = q('tText').value; changed(!o.bg); });
   if (q('tFont')) q('tFont').addEventListener('change', e => { pushUndo(); o.font = e.target.value; document.fonts && document.fonts.load(`36px "${o.font}"`).then(draw); changed(!o.bg); });
   if (q('tAlign')) q('tAlign').addEventListener('change', e => { pushUndo(); o.align = e.target.value; changed(!o.bg); });
@@ -434,6 +436,18 @@ function renderPanel(side){
       h += `<h2>Болота · ${cnt('marsh')}</h2>` + slider('Кількість', 'marsh', .2, 4, .05, s) + `<div class="btns"><button class="btn solid" data-gen="marsh">Згенерувати</button><button class="btn solid" data-clr="marsh">Прибрати</button></div>`;
     }
     if (s.kind === 'river'){ h += slider('Ширина річки', 'width', 1, 30, .5, s) + `<label class="check" style="margin-bottom:8px"><input type="checkbox" id="taperChk" ${s.taper !== false ? 'checked' : ''}> Вужча біля витоку</label><p class="help" style="padding:0;margin-bottom:12px">До 4.5 — одна лінія чорнилом, ширше — вода з двома берегами, яка зливається з озерами, морем та іншими широкими річками. Кінці річки прилипають до інших річок, озер і берега (утримуйте <kbd>Shift</kbd>, щоб вимкнути).</p>`; }
+    if (s.kind !== 'region'){ // підпис: збоку, всередині зони або вздовж кривої (labels.js)
+      const line = s.shape === 'line', pos = labelPosOf(s);
+      h += `<h2>Підпис</h2><div class="row"><input type="text" id="sLabel" class="txt" value="${esc(s.label || '')}" placeholder="${line ? 'Напр., назва річки чи дороги' : 'Без підпису'}" aria-label="Підпис"></div>`;
+      if (s.label){
+        h += `<div class="row"><label for="sLabelPos">Де підпис</label><select id="sLabelPos">${(line ? LABEL_POS_LINE : LABEL_POS_ZONE).map(([v, n]) => `<option value="${v}" ${v === pos ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
+        h += `<div class="row"><label for="sLabelFont">Шрифт підпису</label><select id="sLabelFont">${FONTS.map(([f, n]) => `<option value="${f}" ${f === (s.labelFont || 'Kurale') ? 'selected' : ''} style="font-family:'${f}'">${n}</option>`).join('')}</select></div>`;
+        if (s.labelSize == null) s.labelSize = line ? 20 : pos === 'inside' ? 34 : 26;
+        h += slider(pos === 'inside' ? 'Розмір підпису (найбільший)' : 'Розмір підпису', 'labelSize', 8, 140, 1, s);
+        if (line){ if (s.labelAt == null) s.labelAt = .5; if (s.labelSpread == null) s.labelSpread = 2; h += slider('Де вздовж кривої', 'labelAt', 0, 1, .01, s) + slider('Розрядка між літерами', 'labelSpread', 0, 40, .5, s); }
+        else if (pos === 'inside'){ if (s.labelSpread == null) s.labelSpread = 1; h += slider('Наскільки розтягнути', 'labelSpread', 0, 2, .05, s) + `<p class="help" style="padding:0;margin:-4px 0 8px">Текст іде вздовж найдовшої лінії через зону й розходиться по ній; дуже великий шрифт зменшиться, щоб уміститися.</p>`; }
+        h += `<label class="check"><input type="checkbox" id="sLabelItalic" ${s.labelItalic ? 'checked' : ''}> Курсив</label>`;
+      } }
     h += `<div class="btns">`;
     if (s.shape === 'ellipse') h += `<button class="btn solid" id="toPoly">На полігон</button>`;
     h += `<button class="btn solid" id="dupBtn">Дублювати</button><button class="btn solid" id="delBtn">Видалити</button></div>`;
@@ -448,6 +462,8 @@ function renderPanel(side){
   }
   side.innerHTML = h;
   if (selected){ const sel = selected; bindSliders(side, sel, v => { if (sel.kind === 'river') lastRiverWidth = v; changed(); }); }
+  // повзунки підпису — лише живий шар, мапу не перемальовуємо
+  for (const k of ['labelSize', 'labelSpread', 'labelAt']){ const inp = document.getElementById('f_' + k); if (inp && selected && side.contains(inp)) inp.addEventListener('input', () => { clearTimeout(renderTimer); busy.style.display = 'none'; }); }
   const q = id => document.getElementById(id);
   if (q('treesSel')) q('treesSel').addEventListener('change', e => { pushUndo(); selected.trees = e.target.value; newTrees = e.target.value; changed(); });
   if (q('terrSel')) q('terrSel').addEventListener('change', e => { pushUndo(); selected.terrain = e.target.value; newTerrain = e.target.value; changed(); renderSide(); });
@@ -470,6 +486,13 @@ function renderPanel(side){
   if (q('lineClear')) q('lineClear').addEventListener('change', e => { pushUndo(); selected.clear = e.target.checked; changed(); });
   if (q('routeSel')) q('routeSel').addEventListener('change', e => { pushUndo(); selected.kind = e.target.value; changed(); renderSide(); });
   if (q('taperChk')) q('taperChk').addEventListener('change', e => { pushUndo(); selected.taper = e.target.checked; changed(); });
+  if (q('sLabel')){ const el = q('sLabel'), sel = selected; let u = false; el.addEventListener('focus', () => { u = false; });
+    el.addEventListener('input', () => { if (!u){ pushUndo(); u = true; } sel.label = el.value; changed(true); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
+    el.addEventListener('change', () => { if (!sel.label) for (const k of ['label', 'labelPos', 'labelSize', 'labelSpread', 'labelAt', 'labelFont', 'labelItalic']) delete sel[k]; renderSide(); }); }
+  if (q('sLabelPos')) q('sLabelPos').addEventListener('change', e => { pushUndo(); selected.labelPos = e.target.value; delete selected.labelSize; changed(true); renderSide(); });
+  if (q('sLabelFont')) q('sLabelFont').addEventListener('change', e => { pushUndo(); selected.labelFont = e.target.value; document.fonts && document.fonts.load(`36px "${e.target.value}"`).then(draw); changed(true); });
+  if (q('sLabelItalic')) q('sLabelItalic').addEventListener('change', e => { pushUndo(); selected.labelItalic = e.target.checked; changed(true); });
   side.querySelectorAll('[data-gen]').forEach(b => b.addEventListener('click', () => { const t = b.dataset.gen, rs = selected; pushUndo(); busy.textContent = 'Генерую…'; busy.style.display = 'block';
     setTimeout(() => { let n = 0; try { n = (t === 'stream' ? genStreams : t === 'pond' ? genPonds : genMarsh)(rs, (Math.random()*1e6)|0); } catch (e) { console.error(e); } selected = rs; busy.textContent = 'Перемальовую…'; changed(); renderSide(); toast(n ? 'Згенеровано: ' + n : 'Нічого не вийшло — спробуйте більшу область або вищу густоту'); }, 30); }));
   side.querySelectorAll('[data-clr]').forEach(b => b.addEventListener('click', () => { pushUndo(); const rs = selected; clearGen(rs, b.dataset.clr); selected = rs; changed(); renderSide(); }));

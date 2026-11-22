@@ -39,7 +39,7 @@ Object.assign(EN, {
   'Розсип окремих дерев': 'Scattered single trees', 'Вид окремих дерев': 'Single tree type', 'Контури й вибір': 'Outlines and selection',
   'Показувати контури': 'Show outlines', 'Штампи': 'Stamps', 'Написи': 'Labels',
   // ---------- налаштування фігур ----------
-  'Вигляд': 'Look', 'Поворот': 'Rotation', 'Без підпису': 'No caption', 'Підпис під штампом': 'Caption under stamp', 'Розмір підпису': 'Caption size',
+  'Вигляд': 'Look', 'Поворот': 'Rotation', 'Без підпису': 'No caption', 'Підпис під штампом': 'Caption under stamp', 'Розмір підпису': 'Label size',
   'Світлий фон під штампом': 'Light background under stamp', 'Прибирати гори й дерева під штампом': 'Clear mountains and trees under stamp',
   'Текст (Enter — новий рядок)': 'Text (Enter — new line)', 'Шрифт': 'Font', 'Розмір шрифту': 'Font size', 'Розрядка між літерами': 'Letter spacing',
   'Міжрядковий інтервал': 'Line height', 'Ліворуч': 'Left', 'По центру': 'Center', 'Праворуч': 'Right', 'Вирівнювання': 'Alignment',
@@ -120,7 +120,10 @@ Object.assign(EN, {
   'Оберіть шаблон — назву й розмір уточните на наступному кроці.': 'Pick a template — you will set the name and size on the next step.',
   'Мапи зберігаються лише у вашому браузері й ваших файлах.': 'Maps are stored only in your browser and your files.',
   'Приклад від автора': 'Example by the author', 'Мова інтерфейсу': 'Interface language',
-  'Зрозуміло': 'Got it', 'Основи': 'Basics', 'Гарячі клавіші': 'Hotkeys',
+  'Зрозуміло': 'Got it', 'Підпис': 'Label', 'Де підпис': 'Label position', 'Всередині зони': 'Inside the zone', 'Знизу': 'Below', 'Згори': 'Above',
+  'Над лінією': 'Above the line', 'Під лінією': 'Below the line', 'Шрифт підпису': 'Label font', 'Розмір підпису (найбільший)': 'Label size (maximum)',
+  'Де вздовж кривої': 'Position along the curve', 'Наскільки розтягнути': 'How much to spread', 'Напр., назва річки чи дороги': 'E.g. the name of the river or road',
+  'Текст іде вздовж найдовшої лінії через зону й розходиться по ній; дуже великий шрифт зменшиться, щоб уміститися.': 'The text runs along the longest line through the zone and spreads along it; a very large font shrinks to fit.', 'Основи': 'Basics', 'Гарячі клавіші': 'Hotkeys',
 });
 EN_PATTERNS.push(
   [/^Відкрито «(.+)»$/, m => `Opened “${m[1]}”`],

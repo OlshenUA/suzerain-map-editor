@@ -38,6 +38,8 @@ This file describes what the AI receives and what it must return. Agents can rea
 | `river` | river (`shape: 'line'`) | `width` 1–30 (up to 4.5 — a single line), `taper` |
 | `road` / `rail` / `path` | road / railway / dashed trail (`shape: 'line'`) | `width` 0.4–3 |
 
+**Labels.** Any shape or stamp can have `label` (text), `labelSize`, `labelFont`, `labelItalic`. Zones and stamps: `labelPos` = `below` | `above` | `left` | `right`; zones also `inside` — the text spreads along the zone (`labelSpread` 0–2). Curves (rivers, roads…): the text follows the line, `labelPos` = `above` | `below`, `labelAt` 0–1 — where along the curve, `labelSpread` 0–40 — letter spacing in px.
+
 Polygons close themselves; do not repeat the first point. Shape order matters only for overlaps.
 
 ## What the AI must return
