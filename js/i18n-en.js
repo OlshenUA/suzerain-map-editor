@@ -10,7 +10,7 @@ Object.assign(EN, {
   'Шар вище (PageUp)': 'Layer up (PageUp)', 'Шар нижче (PageDown)': 'Layer down (PageDown)', 'Шари': 'Layers', 'Вихід на шар': 'Exit to layer', 'Немає': 'None',
   'Штамп буде видно й на тому шарі — наприклад, печеру на землі й у підземеллі.': 'The stamp also shows on that layer — e.g. a cave on the ground and underground.',
   'Сніг': 'Snow', 'Тундра': 'Tundra', 'Степ': 'Steppe', 'Поля': 'Fields', 'Пагорби': 'Hills', 'Пустеля': 'Desert',
-  'Хвойні': 'Conifers', 'Листяні': 'Broadleaf', 'Мішані': 'Mixed', 'Пальми': 'Palms', 'Джунглі': 'Jungle', 'Сухостій / мертвий ліс': 'Dead trees',
+  'Хвойні': 'Conifers', 'Листяні': 'Broadleaf', 'Мішані': 'Mixed', 'Пальми': 'Palms', 'Джунглі': 'Jungle', 'Гриби': 'Mushrooms', 'Корали': 'Corals', 'Сухостій / мертвий ліс': 'Dead trees',
   'Роза вітрів': 'Compass rose', 'Будинок': 'House', 'Маєток': 'Manor', 'Вежа': 'Tower', 'Руїни': 'Ruins', 'Печера / шахта': 'Cave / mine',
   'Табір': 'Camp', 'Склад / комплекс': 'Warehouse / complex', 'Стяг': 'Banner', 'Стрілка': 'Arrow', 'Трикутник (Новий Сюзеренат)': 'Triangle (New Suzerainty)', 'Мак': 'Poppy', 'Мітка': 'Marker',
   'Залізо-жовчне': 'Iron gall', 'Сепія': 'Sepia', 'Кіновар': 'Cinnabar', 'Кров’яне': 'Blood', 'Малахіт': 'Malachite', 'Болотяне': 'Bog green',

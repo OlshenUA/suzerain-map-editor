@@ -10,6 +10,8 @@ const TREE_TYPES = {
   palm:      {name: 'Пальми', space: 1.3},
   jungle:    {name: 'Джунглі', space: 1.5},
   dead:      {name: 'Сухостій / мертвий ліс', space: 1.1},
+  mushroom:  {name: 'Гриби', space: 1.25},
+  coral:     {name: 'Корали', space: 1.3},
 };
 const TERRAINS = {
   snow:   {name: 'Сніг', color: '#dfe9ff'},
@@ -43,6 +45,8 @@ function drawTreeKind(g, x, y, s, r, k){
   if (k === 'jungle') return drawBroadleaf(g, x, y, s * 1.15, r, true);
   if (k === 'palm') return drawPalm(g, x, y, s, r);
   if (k === 'dead') return drawDeadTree(g, x, y, s, r);
+  if (k === 'mushroom') return drawMushroom(g, x, y, s, r);
+  if (k === 'coral') return drawCoral(g, x, y, s, r);
   return drawTree(g, x, y, s, r);
 }
 function drawBroadleaf(g, x, y, s, seedv, lush){
@@ -79,6 +83,39 @@ function drawDeadTree(g, x, y, s, seedv){
   for (let i = 0; i < k; i++){ const t = .35 + .6 * i / k; const by = y - h * t, side = i % 2 ? 1 : -1, L = s * (.35 + R()*.3) * (1 - t * .4);
     const ex = x + side * L, ey = by - L * (.55 + R()*.4); g.moveTo(x, by); g.lineTo(ex, ey); if (R() < .6){ g.moveTo((x + ex) / 2 + side * L * .1, (by + ey) / 2); g.lineTo((x + ex) / 2 + side * L * .45, (by + ey) / 2 - L * .45); } }
   g.lineWidth = .8; g.stroke();
+}
+// гриб-велетень: товста ніжка, капелюх-купол з плямами й пластинками знизу, тінь праворуч; іноді поруч малі грибочки
+function drawMushroom(g, x, y, s, seedv){
+  const R = rng(seedv); g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = INK;
+  const one = (x, y, s, spots) => {
+    const h = s * (.95 + R()*.45), sw = s * (.15 + R()*.05), cw = s * (.58 + R()*.2), chh = cw * (.85 + R()*.35), lean = (R() - .5) * s * .25;
+    const tx = x + lean, ty = y - h; // низ капелюха
+    const stem = new Path2D(); stem.moveTo(x - sw * 1.15, y); stem.quadraticCurveTo(x - sw * .7 + lean * .4, y - h * .5, tx - sw * .8, ty); stem.lineTo(tx + sw * .8, ty); stem.quadraticCurveTo(x + sw * .7 + lean * .4, y - h * .5, x + sw * 1.15, y); stem.closePath();
+    g.fillStyle = PAPER_L; g.fill(stem); g.lineWidth = .9; g.stroke(stem);
+    g.beginPath(); for (let i = 1; i <= 3; i++){ const t = i / 4; g.moveTo(x + sw * .35 + lean * t, y - h * t); g.lineTo(x + sw * .9 + lean * t, y - h * t + 1); } g.lineWidth = .6; g.stroke(); // тінь на ніжці
+    const cap = new Path2D(); cap.moveTo(tx - cw, ty + chh * .12); cap.bezierCurveTo(tx - cw * 1.02, ty - chh * 1.05, tx + cw * 1.02, ty - chh * 1.05, tx + cw, ty + chh * .12); cap.quadraticCurveTo(tx, ty - chh * .18, tx - cw, ty + chh * .12); cap.closePath();
+    g.fillStyle = PAPER_L; g.fill(cap); g.lineWidth = 1; g.stroke(cap);
+    g.beginPath(); for (let i = -3; i <= 3; i++){ const gx = tx + cw * i / 4.2; g.moveTo(gx, ty + chh * .05 - Math.abs(i) * .2); g.lineTo(tx + (gx - tx) * .55, ty - chh * .12); } g.lineWidth = .5; g.globalAlpha = .7; g.stroke(); g.globalAlpha = 1; // пластинки
+    g.save(); g.clip(cap); g.beginPath(); for (let i = 0; i < 4; i++){ const ax = tx + cw * (.25 + i * .2), ay = ty - chh * (.75 - i * .12); g.moveTo(ax, ay); g.lineTo(ax + cw * .35, ay + chh * .4); } g.lineWidth = .6; g.globalAlpha = .75; g.stroke(); g.restore(); g.globalAlpha = 1; // тінь
+    if (spots){ g.fillStyle = INK; for (let i = 0; i < 3 + (R()*3 | 0); i++){ const a = Math.PI * (1.12 + R() * .62), rr = .35 + R() * .45; g.beginPath(); g.ellipse(tx + Math.cos(a) * cw * rr * 1.05, ty + chh * .1 + Math.sin(a) * chh * rr * 1.1, s * .05 + R() * s * .03, s * .035 + R() * s * .02, 0, 0, Math.PI * 2); g.fill(); } }
+  };
+  const spots = R() < .55; if (R() < .45) one(x + s * (.45 + R() * .2), y + 1, s * (.38 + R() * .12), spots); one(x, y, s, spots); if (R() < .3) one(x - s * (.5 + R() * .2), y + 1.5, s * (.3 + R() * .1), !spots);
+}
+// корал: гіллясті трубки подвійною лінією з круглими кінчиками й цятками-поліпами; іноді — віяло з сіточкою
+function drawCoral(g, x, y, s, seedv){
+  const R = rng(seedv); g.lineCap = 'round'; g.lineJoin = 'round'; const h = s * (1.5 + R()*.45);
+  if (R() < .3){ // віяло
+    const w = h * .5, fan = new Path2D(); fan.moveTo(x, y - h * .12); for (let i = 0; i <= 10; i++){ const a = Math.PI * (1.08 + .84 * i / 10); const rr = h * (.82 + (R() - .5) * .14); fan.lineTo(x + Math.cos(a) * w * rr / h * 1.25, y - h * .12 + Math.sin(a) * rr); } fan.closePath();
+    g.fillStyle = PAPER_L; g.fill(fan); g.strokeStyle = INK; g.lineWidth = 1; g.stroke(fan);
+    g.save(); g.clip(fan); g.beginPath(); for (let i = 0; i < 7; i++){ const a = Math.PI * (1.12 + .76 * i / 6); g.moveTo(x, y - h * .12); g.lineTo(x + Math.cos(a) * h * 1.2, y - h * .12 + Math.sin(a) * h * 1.2); } for (let k = 1; k <= 3; k++){ g.moveTo(x - w, y - h * .12 - h * k / 4); g.lineTo(x + w, y - h * .12 - h * k / 4 - h * .05); } g.lineWidth = .5; g.globalAlpha = .7; g.stroke(); g.restore(); g.globalAlpha = 1;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x, y - h * .12); g.lineWidth = 1.6; g.strokeStyle = INK; g.stroke(); return; }
+  const segs = []; const grow = (px, py, a, len, w, d) => { const ex = px + Math.cos(a) * len, ey = py + Math.sin(a) * len; const cx = px + Math.cos(a + (R() - .5) * .6) * len * .55, cy = py + Math.sin(a + (R() - .5) * .6) * len * .55; segs.push([px, py, cx, cy, ex, ey, w, d]);
+    if (d < 3 && len > s * .18){ const k = d === 0 ? 2 + (R() < .5 ? 1 : 0) : 2; for (let i = 0; i < k; i++){ const na = a + (i - (k - 1) / 2) * (.62 + R() * .3) + (R() - .5) * .2; grow(ex, ey, Math.max(-Math.PI * .97, Math.min(-Math.PI * .03, na)), len * (.62 + R() * .16), w * .76, d + 1); } } };
+  grow(x, y, -Math.PI / 2 + (R() - .5) * .2, h * .42, Math.max(2.2, s * .2), 0);
+  // контур: широка чорнильна лінія, поверх — світла, вужча; так трубки зливаються в один кущ
+  for (const [col, add] of [[INK, 1.9], [PAPER_L, 0]]){ g.strokeStyle = col; for (const sg of segs){ g.beginPath(); g.moveTo(sg[0], sg[1]); g.quadraticCurveTo(sg[2], sg[3], sg[4], sg[5]); g.lineWidth = sg[6] + add; g.stroke(); } }
+  g.beginPath(); for (const [px, py, cx, cy, ex, ey, w] of segs){ const nx = ex - px, ny = ey - py, L = Math.hypot(nx, ny) || 1; const ox = -ny / L * w * .28, oy = nx / L * w * .28; g.moveTo(px - Math.abs(ox), py + oy * .2); g.lineTo(ex - Math.abs(ox), ey + oy * .2); } g.strokeStyle = INK; g.lineWidth = .5; g.globalAlpha = .55; g.stroke(); g.globalAlpha = 1; // штрих тіні вздовж трубок
+  g.fillStyle = INK; for (const sg of segs){ if (R() < .5) continue; const t = .3 + R() * .5; g.beginPath(); g.arc(sg[0] + (sg[4] - sg[0]) * t, sg[1] + (sg[5] - sg[1]) * t, Math.max(.45, sg[6] * .14), 0, Math.PI * 2); g.fill(); }
 }
 function drawHill(g, x, y, s, seedv){
   const R = rng(seedv); const w = s * (1.9 + R()*.5), h = s * (.5 + R()*.2); const px = x + (R() - .5) * w * .16;
