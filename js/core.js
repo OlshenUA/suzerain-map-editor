@@ -11,7 +11,7 @@ const LS_KEY = 'kraitren-map-editor-autosave-v1';
 const DB_DOC = 'maps/north';
 
 let uid = 1;
-function ensureIds(){ if (typeof migrateNature === 'function') migrateNature(data); for (const s of data.shapes){ if(!s.id) s.id = 's' + (uid++); else { const n = +String(s.id).slice(1); if(n >= uid) uid = n + 1; } } if (typeof ensureDecor === 'function') ensureDecor(); if (typeof applyMapSize === 'function') applyMapSize(); }
+function ensureIds(){ if (typeof migrateNature === 'function') migrateNature(data); for (const s of data.shapes){ if(!s.id) s.id = 's' + (uid++); else { const n = +String(s.id).slice(1); if(n >= uid) uid = n + 1; } } if (typeof ensureDecor === 'function') ensureDecor(); if (typeof ensureLayers === 'function') ensureLayers(); if (typeof applyMapSize === 'function') applyMapSize(); }
 ensureIds();
 
 // ================= noise / rng =================

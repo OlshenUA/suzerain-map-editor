@@ -22,10 +22,12 @@ English version: [AI.en.md](AI.en.md)
   W, H, seed, name,
   settings: { scatter, scatterTrees },
   shapes: [ { id: 's7', kind, shape: 'poly' | 'ellipse' | 'line', pts: [[x, y], ...] | cx, cy, rx, ry, rot, ...параметри } ],
-  stamps: [ { id: 'd12', type, x, y, size, rot, label, labelSize } ],
+  stamps: [ { id: 'd12', type, x, y, size, rot, label, labelSize, exit } ],
   texts:  [ { id: 'd30', x, y, w, h, text, size, font, align, bg, italic, bold } ]
 }
 ```
+
+Шари: `layer` — номер активного шару (0 — земля, >0 — летючі острови, <0 — підземелля); `shapes/stamps/texts` — це активний шар, решта лежить у `layers: { "-1": { shapes, stamps, texts }, ... }`. Штамп з `exit: n` видно ще й на шарі n.
 
 | kind | що це | параметри |
 |---|---|---|

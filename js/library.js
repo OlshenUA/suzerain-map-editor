@@ -76,7 +76,8 @@ function shiftData(d, dx, dy){ if (!dx && !dy) return;
   for (const s of d.shapes || []){ if (Array.isArray(s.pts)) s.pts = s.pts.map(mv); if (s.cx != null){ s.cx += dx; s.cy += dy; } }
   for (const o of (d.stamps || []).concat(d.texts || [])){ o.x += dx; o.y += dy; }
   if (d.compass){ d.compass.x += dx; d.compass.y += dy; }
-  if (d.exportRect){ d.exportRect.x += dx; d.exportRect.y += dy; } }
+  if (d.exportRect){ d.exportRect.x += dx; d.exportRect.y += dy; }
+  for (const k of Object.keys(d.layers || {})) shiftData(d.layers[k], dx, dy); }
 
 // ================= модальні вікна: спільне =================
 const MIN_SIDE = 400, MAX_SIDE = 8000;

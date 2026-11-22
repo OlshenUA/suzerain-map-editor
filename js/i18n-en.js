@@ -6,6 +6,9 @@ Object.assign(EN, {
   'Суша': 'Land', 'Озеро': 'Lake', 'Гори': 'Mountains', 'Ліс': 'Forest', 'Болото': 'Marsh', 'Ландшафт': 'Landscape', 'Річка': 'River',
   'Область генерації': 'Generation area', 'Село': 'Village', 'Місто': 'Town', 'Фортеця': 'Fortress', 'Дорога': 'Road', 'Залізниця': 'Railway',
   'Шлях': 'Trail', 'Шлях (пунктир)': 'Trail (dashed)', 'Пляма': 'Stain',
+  // ---------- шари ----------
+  'Шар вище (PageUp)': 'Layer up (PageUp)', 'Шар нижче (PageDown)': 'Layer down (PageDown)', 'Шари': 'Layers', 'Вихід на шар': 'Exit to layer', 'Немає': 'None',
+  'Штамп буде видно й на тому шарі — наприклад, печеру на землі й у підземеллі.': 'The stamp also shows on that layer — e.g. a cave on the ground and underground.',
   'Сніг': 'Snow', 'Тундра': 'Tundra', 'Степ': 'Steppe', 'Поля': 'Fields', 'Пагорби': 'Hills', 'Пустеля': 'Desert',
   'Хвойні': 'Conifers', 'Листяні': 'Broadleaf', 'Мішані': 'Mixed', 'Пальми': 'Palms', 'Джунглі': 'Jungle', 'Сухостій / мертвий ліс': 'Dead trees',
   'Роза вітрів': 'Compass rose', 'Будинок': 'House', 'Маєток': 'Manor', 'Вежа': 'Tower', 'Руїни': 'Ruins', 'Печера / шахта': 'Cave / mine',

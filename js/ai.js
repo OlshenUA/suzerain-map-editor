@@ -35,6 +35,7 @@ shapes: [{id, kind, shape: 'poly'|'ellipse'|'line', pts: [[x,y],...] (or cx, cy,
 stamps: [{id, type, x, y, size, rot, label, labelPos, labelSize}]; type = ${stamps}
 texts: [{id, x, y, w, h, text, size, font, align, bg, italic, bold}]
 settings: {scatter (0–3, single trees), scatterTrees}
+Layers: you see the active layer (layer: ${data.layer | 0}; 0 = ground, >0 = floating islands, <0 = dungeons — land there is passable caves, the rest is rock). A stamp may have exit: <layer number> — it then also shows on that layer.
 Labels: any shape or stamp can have label (text), labelSize, labelFont, labelItalic. Zones and stamps: labelPos = below | above | left | right; zones also inside (the text spreads along the zone, labelSpread 0–2). Curves (river, road…): the text follows the line, labelPos = above | below, labelAt 0–1 (where along it), labelSpread 0–40 (letter spacing, px).
 
 ## How to reply
@@ -60,6 +61,7 @@ shapes: [{id, kind, shape: 'poly'|'ellipse'|'line', pts: [[x,y],...] (або cx,
 stamps: [{id, type, x, y, size, rot, label, labelPos, labelSize}]; type = ${stamps}
 texts: [{id, x, y, w, h, text, size, font, align, bg, italic, bold}]
 settings: {scatter (0–3, окремі дерева), scatterTrees}
+Шари: ти бачиш активний шар (layer: ${data.layer | 0}; 0 — земля, >0 — летючі острови, <0 — підземелля: суша там — прохідні печери, решта — скеля). Штамп може мати exit: <номер шару> — тоді його видно й на тому шарі.
 Підписи: будь-яка фігура чи штамп може мати label (текст), labelSize, labelFont, labelItalic. Зони й штампи: labelPos = below | above | left | right; зони ще inside (текст розходиться вздовж зони, labelSpread 0–2). Криві (river, road…): текст іде вздовж лінії, labelPos = above | below, labelAt 0–1 (де вздовж), labelSpread 0–40 (розрядка, px).
 
 ## Як відповісти
@@ -170,8 +172,8 @@ function aiStartPreview(after, errors){
   busy.textContent = 'Готую порівняння…'; busy.style.display = 'block';
   setTimeout(() => {
     let imgAfter, imgBefore;
-    try { data = after; ensureIds(); imgAfter = renderMap(1); } finally { data = before; ensureIds(); }
-    imgBefore = mapImg || renderMap(1);
+    try { data = after; ensureIds(); imgAfter = renderLayered(1); } finally { data = before; ensureIds(); }
+    imgBefore = mapImg || renderLayered(1);
     busy.style.display = 'none'; busy.textContent = 'Перемальовую…';
     const changes = aiDiff(before, after);
     aiPreview = {before, after, beforeJson, imgBefore, imgAfter, showing: 'after', changes, errors};

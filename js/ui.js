@@ -62,7 +62,7 @@ function ellipseHandles(s){ const c = Math.cos(s.rot||0), sn = Math.sin(s.rot||0
 // ================= rendering scheduler =================
 let renderTimer = null, renderVersion = 0;
 const busy = document.getElementById('busy');
-function scheduleRender(delay){ clearTimeout(renderTimer); busy.style.display = 'block'; renderTimer = setTimeout(() => { requestAnimationFrame(() => { try { mapImg = renderMap(1); libThumb(mapImg); } catch (e) { console.error(e); } busy.style.display = 'none'; draw(); }); }, delay ?? 300); }
+function scheduleRender(delay){ clearTimeout(renderTimer); busy.style.display = 'block'; renderTimer = setTimeout(() => { requestAnimationFrame(() => { try { mapImg = renderLayered(1); libThumb(mapImg); } catch (e) { console.error(e); } busy.style.display = 'none'; draw(); }); }, delay ?? 300); }
 
 // ================= history & persistence =================
 let undoStack = [], redoStack = [];
@@ -370,6 +370,8 @@ function renderDecorSide(side){
     h += `<div class="row"><label for="dLabel">Підпис під штампом</label><input type="text" id="dLabel" value="${(o.label || '').replace(/"/g, '&quot;')}" placeholder="Без підпису" style="background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-height:36px"></div>`;
     h += `<div class="row"><label for="dLabelPos">Де підпис</label><select id="dLabelPos">${LABEL_POS_STAMP.map(([v, n]) => `<option value="${v}" ${v === labelPosOf(o, true) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
     if (o.labelSize == null) o.labelSize = 22; h += slider('Розмір підпису', 'labelSize', 10, 80, 1, o);
+    if (o.type !== 'compass'){ const cur = data.layer | 0; const ex = [...new Set(layerNums().concat([cur + 1, cur - 1]))].filter(n => n !== cur && n >= LAYER_MIN && n <= LAYER_MAX).sort((a, b) => b - a);
+      h += `<div class="row"><label for="dExit">Вихід на шар</label><select id="dExit"><option value="">Немає</option>${ex.map(n => `<option value="${n}" ${o.exit === n ? 'selected' : ''} data-noi18n>${layerName(n)}</option>`).join('')}</select></div><p class="help" style="padding:0;margin:0 0 8px">Штамп буде видно й на тому шарі — наприклад, печеру на землі й у підземеллі.</p>`; }
     if (o.type !== 'compass') h += `<label class="check"><input type="checkbox" id="dHalo" ${o.halo !== false ? 'checked' : ''}> Світлий фон під штампом</label><label class="check"><input type="checkbox" id="dClear" ${o.clear !== false ? 'checked' : ''}> Прибирати гори й дерева під штампом</label>`;
   } else {
     h += `<div class="kindtag"><span class="dot" style="background:#d39a4a"></span>Текст</div>`;
@@ -385,6 +387,7 @@ function renderDecorSide(side){
   bindSliders(side, o, () => changed(so.type === 'text' && !o.bg));
   const once = (el, ev, fn) => { let u = false; el.addEventListener('focus', () => { u = false; }); el.addEventListener(ev, () => { if (!u){ pushUndo(); u = true; } fn(); }); };
   if (q('dType')) q('dType').addEventListener('change', e => { pushUndo(); o.type = e.target.value; o.size = STAMPS[o.type].size; changed(); renderSide(); });
+  if (q('dExit')) q('dExit').addEventListener('change', e => { pushUndo(); if (e.target.value === '') delete o.exit; else o.exit = +e.target.value; changed(); });
   if (q('dHalo')) q('dHalo').addEventListener('change', e => { pushUndo(); o.halo = e.target.checked; changed(true); });
   if (q('dClear')) q('dClear').addEventListener('change', e => { pushUndo(); o.clear = e.target.checked; changed(); });
   if (q('dLabel')) once(q('dLabel'), 'input', () => { o.label = q('dLabel').value; changed(true); });
@@ -403,7 +406,7 @@ function renderSide(){
   const s0 = selected, o0 = selObj;
   selected = null; selObj = null; try { renderPanel(sidePanel); } finally { selected = s0; selObj = o0; }
   if (s0 || o0) renderPanel(objPanel); else objPanel.innerHTML = '';
-  updateLeftPanel(); }
+  updateLeftPanel(); updateLayerUI(); }
 function renderPanel(side){
   if (selObj){ renderDecorSide(side); return; }
   let h = '';
@@ -534,8 +537,8 @@ document.getElementById('exGo').addEventListener('click', async () => {
   const area = document.querySelector('input[name=exArea]:checked').value, sc = +document.getElementById('exScale').value, frame = document.getElementById('exFrame').checked;
   closeExport(); busy.textContent = 'Готую PNG…'; busy.style.display = 'block'; await new Promise(r => setTimeout(r, 30));
   try { const r = area === 'rect' ? data.exportRect : null; let out;
-    if (!r){ out = renderMap(sc, true, !frame); }
-    else { const full = renderMap(sc, true, true); out = layer(Math.round(r.w*sc), Math.round(r.h*sc)); const og = out.getContext('2d'); og.drawImage(full, Math.round(r.x*sc), Math.round(r.y*sc), out.width, out.height, 0, 0, out.width, out.height);
+    if (!r){ out = renderLayered(sc, true, !frame); }
+    else { const full = renderLayered(sc, true, true); out = layer(Math.round(r.w*sc), Math.round(r.h*sc)); const og = out.getContext('2d'); og.drawImage(full, Math.round(r.x*sc), Math.round(r.y*sc), out.width, out.height, 0, 0, out.width, out.height);
       const cw2 = out.width, ch2 = out.height, vg = og.createRadialGradient(cw2/2, ch2/2, 0, cw2/2, ch2/2, Math.hypot(cw2, ch2)*.55); vg.addColorStop(.62, 'rgba(107,63,18,0)'); vg.addColorStop(.9, 'rgba(107,63,18,.22)'); vg.addColorStop(1, 'rgba(74,42,10,.42)'); og.fillStyle = vg; og.fillRect(0, 0, cw2, ch2);
       if (frame) drawFrameRect(og, out.width, out.height, sc); }
     const blob = await new Promise(res => out.toBlob(res, 'image/png')); await dl.save({filename: fileSafe(mapName(data)) + (r ? L(' (фрагмент).png', ' (fragment).png') : '.png'), data: blob}); toast('PNG збережено'); }

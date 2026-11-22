@@ -52,14 +52,14 @@ function buildField(geo){
   return d;
 }
 
-function placeGlyphs(geo, dist){
+function placeGlyphs(geo, dist, mode){
   const seed = data.seed | 0; const st = data.settings || {};
   const occ = new Uint8Array(FW * FH);
   const landAt = (x, y, m) => { const fx = (x / FS) | 0, fy = (y / FS) | 0; if (fx < 0 || fy < 0 || fx >= FW || fy >= FH) return false; return dist[fy*FW + fx] >= (m || 0.01); };
   const mark = (x, y, r) => { const fx = (x / FS) | 0, fy = (y / FS) | 0, rr = Math.ceil(r / FS); for (let yy = fy - rr; yy <= fy; yy++) for (let xx = fx - rr; xx <= fx + rr; xx++) if (xx >= 0 && yy >= 0 && xx < FW && yy < FH) occ[yy*FW + xx] = 1; };
   const free = (x, y, r) => { const fx = (x / FS) | 0, fy = (y / FS) | 0, rr = Math.ceil(r / FS); for (let yy = fy - rr; yy <= fy; yy++) for (let xx = fx - rr; xx <= fx + rr; xx++) if (xx >= 0 && yy >= 0 && xx < FW && yy < FH && occ[yy*FW + xx]) return false; return true; };
   const mS = new Uint8Array(FW*FH), mD = new Uint8Array(FW*FH), mR = new Uint8Array(FW*FH);
-  for (const st of data.stamps || []){ if (st.clear === false) continue; const b = stampBox(st); const r = (b[2] - b[0]) / 2 * .85; for (let yy = st.y - r; yy <= st.y + r + 14; yy += FS) for (let xx = st.x - r; xx <= st.x + r; xx += FS){ if (Math.hypot(xx - st.x, (yy - st.y) * .9) <= r){ const fx = (xx/FS)|0, fy = (yy/FS)|0; if (fx>=0&&fy>=0&&fx<FW&&fy<FH) mS[fy*FW+fx] = 1; } } }
+  for (const st of (data.stamps || []).concat(exitStamps())){ if (st.clear === false) continue; const b = stampBox(st); const r = (b[2] - b[0]) / 2 * .85; for (let yy = st.y - r; yy <= st.y + r + 14; yy += FS) for (let xx = st.x - r; xx <= st.x + r; xx += FS){ if (Math.hypot(xx - st.x, (yy - st.y) * .9) <= r){ const fx = (xx/FS)|0, fy = (yy/FS)|0; if (fx>=0&&fy>=0&&fx<FW&&fy<FH) mS[fy*FW+fx] = 1; } } }
   for (const t of data.texts || []) if (t.bg) for (let yy = t.y; yy <= t.y + t.h + 14; yy += FS) for (let xx = t.x - 6; xx <= t.x + t.w + 6; xx += FS){ const fx = (xx/FS)|0, fy = (yy/FS)|0; if (fx>=0&&fy>=0&&fx<FW&&fy<FH) mS[fy*FW+fx] = 1; }
   for (const r of geo.routes || []){ const rr = 5 * (r.s.width || 1) + 3; for (let i = 0; i < r.pts.length; i += 2){ const p = r.pts[i]; const fx = (p[0]/FS)|0, fy = (p[1]/FS)|0, k = Math.ceil(rr/FS); for (let yy = fy-k; yy <= fy+k+2; yy++) for (let xx = fx-k; xx <= fx+k; xx++) if (xx>=0&&yy>=0&&xx<FW&&yy<FH) { mD[yy*FW+xx] = 1; if (r.s.clear !== false) occ[yy*FW+xx] = 1; }; } }
   // rivers block
@@ -102,7 +102,7 @@ function placeGlyphs(geo, dist){
       if (!landAt(x, y, 8) || !free(x, y, sp)) continue; const s = ts * (.82 + R()*.36); glyphs.push({y, t: 't', x, s, r: (R()*1e9)|0, k: pickTree(tk, R)}); mark(x, y, sp); }
   }
   // scattered trees
-  { const R = rng(seed * 17 + 5); const n = Math.round(2500 * (st.scatter ?? 1)); const stk = TREE_TYPES[st.scatterTrees] ? st.scatterTrees : 'conifer'; const sf = TREE_TYPES[stk].space; const noTrees = geo.ter.filter(z => terrainOf(z) === 'desert'); const treeOk = (x, y) => !noTrees.some(z => inside(z, x, y));
+  { const R = rng(seed * 17 + 5); const n = mode === 'cave' ? 0 : Math.round(2500 * (st.scatter ?? 1)); /* у підземеллі окремих дерев немає */ const stk = TREE_TYPES[st.scatterTrees] ? st.scatterTrees : 'conifer'; const sf = TREE_TYPES[stk].space; const noTrees = geo.ter.filter(z => terrainOf(z) === 'desert'); const treeOk = (x, y) => !noTrees.some(z => inside(z, x, y));
     for (let i = 0; i < n; i++){ const x = 40 + R()*(W-80), y = 40 + R()*(H-80); if (!(landAt(x, y, 10) && free(x, y, 16) && R() < .08)) continue;
       const k = 1 + (R()*4|0); for (let j = 0; j < k; j++){ const xx = x + (R()-.5)*32, yy = y + (R()-.5)*18; if (landAt(xx, yy, 8) && free(xx, yy, 7 * sf) && treeOk(xx, yy)){ glyphs.push({y: yy, t: 't', x: xx, s: 8 + R()*3, r: (R()*1e9)|0, k: pickTree(stk, R)}); mark(xx, yy, 7 * sf); } } } }
   // сніг, тундра, степ, пустеля (nature.js)
@@ -398,7 +398,7 @@ function drawTextBox(g, t){
   for (const ln of lines){ if (!t.bg){ g.lineJoin = 'round'; g.strokeStyle = 'rgba(239,226,189,.92)'; g.lineWidth = fs*.22; g.strokeText(ln, x, y); } g.fillStyle = INK; g.fillText(ln, x, y); y += lh; }
   g.restore();
 }
-function drawDecor(g){ drawShapeLabels(g); for (const st of data.stamps || []) drawStamp(g, st); for (const t of data.texts || []) drawTextBox(g, t); }
+function drawDecor(g){ drawShapeLabels(g); for (const st of data.stamps || []) drawStamp(g, st); for (const st of exitStamps()) drawStamp(g, st); for (const t of data.texts || []) drawTextBox(g, t); }
 function hitDecor(x, y){ const ts = visibleKinds.text === false ? [] : (data.texts || []); for (let i = ts.length - 1; i >= 0; i--){ const t = ts[i]; if (x >= t.x && x <= t.x + t.w && y >= t.y && y <= t.y + t.h) return {type: 'text', o: t}; }
   const ss = visibleKinds.stamp === false ? [] : (data.stamps || []); for (let i = ss.length - 1; i >= 0; i--){ const s = ss[i]; const r = Math.max(s.type === 'compass' ? s.size*.55 : s.size*.5, 10 / vs.scale); if (Math.hypot(x - s.x, y - s.y) <= r) return {type: 'stamp', o: s}; } return null; }
 function decorHandle(so){ if (so.type === 'text') return [so.o.x + so.o.w, so.o.y + so.o.h]; const b = stampBox(so.o); return [b[2], b[3]]; }
@@ -418,11 +418,12 @@ function drawCompass(g, cx, cy, r){
   g.restore();
 }
 
-function renderMap(scale, withDecor, noFrame){
+// opts.mode: 'island' — летючий острів поверх opts.bg (layers.js), 'cave' — підземелля; opts.under(g) малює під штампами (тіні шарів)
+function renderMap(scale, withDecor, noFrame, opts){
+  opts = opts || {}; const mode = opts.mode;
   const cw = Math.round(W*scale), ch = Math.round(H*scale);
   const out = layer(cw, ch); const g = out.getContext('2d');
   if (!paperCanvas) paperCanvas = makePaper();
-  g.drawImage(paperCanvas, 0, 0, cw, ch);
   const geo = buildGeometry(); const dist = buildField(geo);
   const S = (ctx) => { ctx.setTransform(scale, 0, 0, scale, 0, 0); };
   // land mask
@@ -432,14 +433,20 @@ function renderMap(scale, withDecor, noFrame){
   lg.globalCompositeOperation = 'destination-out'; for (const l of geo.lakes) lg.fill(pathOf(l.rough, true));
   lg.strokeStyle = '#000'; for (const r of wide) strokeRiver(lg, r, 0);
   lg.globalCompositeOperation = 'source-over';
+  // папір: на летючому острові — тільки під сушею (озера теж), довкола — нижні шари
+  let solidL = null; if (mode){ solidL = layer(cw, ch); const sg = solidL.getContext('2d'); S(sg); sg.fillStyle = '#000'; for (const l of geo.lands) sg.fill(pathOf(l.rough, true)); }
+  if (mode === 'island'){ if (opts.bg) g.drawImage(opts.bg, 0, 0, cw, ch); drawCliffs(g, geo, scale, cw, ch);
+    const pp = layer(cw, ch), pg = pp.getContext('2d'); pg.drawImage(paperCanvas, 0, 0, cw, ch); pg.globalCompositeOperation = 'destination-in'; pg.drawImage(solidL, 0, 0); g.drawImage(pp, 0, 0); }
+  else g.drawImage(paperCanvas, 0, 0, cw, ch);
   // tint
   const tint = layer(cw, ch), tg = tint.getContext('2d'); tg.drawImage(landL, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = PAPER_L; tg.fillRect(0, 0, cw, ch);
   g.globalAlpha = .55; g.drawImage(tint, 0, 0); g.globalAlpha = 1;
+  if (mode === 'cave') drawRock(g, solidL, scale, cw, ch);
   // coast path (all edges)
   const coast = new Path2D(); for (const l of geo.lands.concat(geo.lakes)) coast.addPath(pathOf(l.rough, true));
   // ripples (sea and lakes only, never inside rivers)
   const tmp = layer(cw, ch), mg = tmp.getContext('2d');
-  for (const [d, w, a, dash] of [[38, .7, .2, [14, 3, 6, 3]], [25, .9, .33, [14, 3, 6, 3]], [15, 1.1, .52, null], [7, 1.4, .75, null]]){
+  for (const [d, w, a, dash] of mode ? [] : [[38, .7, .2, [14, 3, 6, 3]], [25, .9, .33, [14, 3, 6, 3]], [15, 1.1, .52, null], [7, 1.4, .75, null]]){
     mg.setTransform(1, 0, 0, 1, 0, 0); mg.clearRect(0, 0, cw, ch); S(mg); mg.lineJoin = 'round';
     mg.globalCompositeOperation = 'source-over'; mg.strokeStyle = INK; mg.lineWidth = 2*d + w; mg.setLineDash(dash || []); mg.stroke(coast); mg.setLineDash([]);
     mg.globalCompositeOperation = 'destination-out'; mg.lineWidth = 2*d - w; mg.stroke(coast);
@@ -466,7 +473,7 @@ function renderMap(scale, withDecor, noFrame){
   og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'destination-in'; og.drawImage(landL, 0, 0); og.globalCompositeOperation = 'source-over';
   g.drawImage(one, 0, 0);
   // glyph placement
-  const pl = placeGlyphs(geo, dist);
+  const pl = placeGlyphs(geo, dist, mode);
   S(g);
   // stipple & snow ticks
   g.fillStyle = INK; g.globalAlpha = .33; for (const [x, y] of pl.stip){ g.fillRect(x - .65, y - .65, 1.3, 1.3); } g.globalAlpha = 1;
@@ -476,6 +483,7 @@ function renderMap(scale, withDecor, noFrame){
   // glyphs
   for (const o of pl.glyphs){ if (o.t === 'h') drawHut(g, o.x, o.y, o.s, o.r); else if (o.t === 'wt') drawWallTower(g, o.x, o.y, o.s, o.cone); else if (o.t === 'sp') drawSpire(g, o.x, o.y, o.s); else if (o.t === 'kp') drawKeep(g, o.x, o.y, o.s); else if (o.t === 'm') drawMountain(g, o.x, o.y, o.s, o.r); else if (drawNatureGlyph(g, o)){} else if (o.t === 'b') drawTuft(g, o.x, o.y, o.s, o.r); else drawWet(g, o.x, o.y, o.s, o.r); }
   drawStains(g, geo.stains, scale);
+  if (opts.under){ g.save(); S(g); opts.under(g); g.restore(); }
   if (withDecor) drawDecor(g);
   // frame
   if (!noFrame){ g.strokeStyle = INK; g.lineWidth = 3; g.strokeRect(18, 18, W - 36, H - 36); g.lineWidth = 1; g.strokeRect(28, 28, W - 56, H - 56);

@@ -177,3 +177,12 @@ html[lang="en"] [data-lang="uk"], html:not([lang="en"]) [data-lang="en"]{display
 .gallery figcaption{font-size:12px;color:var(--muted);margin-top:3px}
 .keytable{border-collapse:collapse;width:100%;font-size:14px}.keytable td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}.keytable td:first-child{white-space:nowrap;width:1%;padding-right:18px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#2f2a24;border:1px solid var(--line);padding:8px 14px;border-radius:8px;display:none;z-index:20}
+/* перемикач шарів у лівому нижньому куті мапи */
+.layerbar{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:2px;background:rgba(38,34,29,.94);border:1px solid var(--line);border-radius:8px;padding:2px;z-index:5}
+.layerbar .laycur{min-width:118px;font-weight:600}
+.layerbar.sky .laycur{color:#9fd0ff}
+.layerbar.under .laycur{color:#e0a070}
+.layerbar .laylist{position:absolute;left:0;bottom:calc(100% + 6px);display:flex;flex-direction:column;gap:2px;min-width:100%;width:220px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px}
+.layerbar .laylist[hidden]{display:none}
+.layerbar .laylist .btn{text-align:left}
+.layerbar .laylist .help{margin:4px 6px;font-size:12px;color:var(--muted);white-space:normal}

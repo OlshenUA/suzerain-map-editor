@@ -20,10 +20,12 @@ This file describes what the AI receives and what it must return. Agents can rea
   W, H, seed, name,
   settings: { scatter, scatterTrees },
   shapes: [ { id: 's7', kind, shape: 'poly' | 'ellipse' | 'line', pts: [[x, y], ...] | cx, cy, rx, ry, rot, ...parameters } ],
-  stamps: [ { id: 'd12', type, x, y, size, rot, label, labelSize } ],
+  stamps: [ { id: 'd12', type, x, y, size, rot, label, labelSize, exit } ],
   texts:  [ { id: 'd30', x, y, w, h, text, size, font, align, bg, italic, bold } ]
 }
 ```
+
+Layers: `layer` is the active layer number (0 — ground, >0 — floating islands, <0 — dungeons); `shapes/stamps/texts` are the active layer, the others live in `layers: { "-1": { shapes, stamps, texts }, ... }`. A stamp with `exit: n` also shows on layer n.
 
 | kind | what it is | parameters |
 |---|---|---|
