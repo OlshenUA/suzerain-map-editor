@@ -83,7 +83,7 @@ function drawLabelAlong(g, s){
   if (pointAt(G, G.len * at + total / 2)[0] < pointAt(G, G.len * at - total / 2)[0]){ G = build(pts.slice().reverse()); at = 1 - at; }
   const start = Math.max(0, Math.min(G.len - total, G.len * at - total / 2));
   // відступ від лінії з урахуванням її товщини: над чи під
-  const lineW = s.kind === 'river' ? (s.width || 3) : 5 * (s.width || 1); const off = (s.labelPos === 'below' ? 1 : -1) * (lineW / 2 + size * .62);
+  const lineW = s.kind === 'river' ? (s.width || 3) : s.kind === 'rift' ? (s.width || 5) * 1.6 : 5 * (s.width || 1); const off = (s.labelPos === 'below' ? 1 : -1) * (lineW / 2 + size * .62);
   g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
   for (const pass of [0, 1]){ let d = start;
     for (let i = 0; i < chars.length; i++){ const [x, y, a] = pointAt(G, d + widths[i] / 2); g.save(); g.translate(x - Math.sin(a) * off, y + Math.cos(a) * off); g.rotate(a);

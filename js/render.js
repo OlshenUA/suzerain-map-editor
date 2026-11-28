@@ -5,7 +5,7 @@ function layer(w, h){ const c = document.createElement('canvas'); c.width = w; c
 
 function buildGeometry(){
   const seed = data.seed | 0;
-  const lands = [], lakes = [], rivers = [], mts = [], fos = [], ter = [], set = [], routes = [], stains = [];
+  const lands = [], lakes = [], rivers = [], mts = [], fos = [], ter = [], set = [], routes = [], stains = [], rifts = [];
   for (const s of data.shapes){
     if (s.kind === 'land' || s.kind === 'lake'){
       let p = shapePts(s); if (p.length < 3) continue;
@@ -13,6 +13,7 @@ function buildGeometry(){
       const rough = roughen(smooth, true, s.kind === 'land' ? 6.5 : 4, seed + 11, 3);
       (s.kind === 'land' ? lands : lakes).push({s, raw: p, rough, bb: bbox(rough)});
     } else if (s.kind === 'stain'){ stains.push(s);
+    } else if (s.kind === 'rift'){ const r = riftGeo(s, seed); if (r) rifts.push(r); // rifts.js
     } else if (ROUTE_KINDS.includes(s.kind)){ if (s.pts.length < 2) continue; routes.push({s, pts: roughen(chaikin(s.pts, 3, false), false, .7, seed + 41, 5)});
     } else if (s.kind === 'river'){
       if (s.pts.length < 2) continue;
@@ -20,7 +21,7 @@ function buildGeometry(){
       rivers.push({s, pts: rough});
     } else if (s.kind === 'mountain') mts.push(s); else if (s.kind === 'forest') fos.push(s); else if (s.kind === 'terrain') ter.push(s); else if (s.kind === 'vill' || s.kind === 'town' || s.kind === 'fort') set.push(s);
   }
-  return {lands, lakes, rivers, mts, fos, ter, set, routes, stains};
+  return {lands, lakes, rivers, mts, fos, ter, set, routes, stains, rifts};
 }
 
 const WIDE = 4.5;
@@ -64,6 +65,7 @@ function placeGlyphs(geo, dist, mode){
   for (const r of geo.routes || []){ const rr = 5 * (r.s.width || 1) + 3; for (let i = 0; i < r.pts.length; i += 2){ const p = r.pts[i]; const fx = (p[0]/FS)|0, fy = (p[1]/FS)|0, k = Math.ceil(rr/FS); for (let yy = fy-k; yy <= fy+k+2; yy++) for (let xx = fx-k; xx <= fx+k; xx++) if (xx>=0&&yy>=0&&xx<FW&&yy<FH) { mD[yy*FW+xx] = 1; if (r.s.clear !== false) occ[yy*FW+xx] = 1; }; } }
   // rivers block
   for (const r of geo.rivers){ const w = r.s.width || 3; for (let i = 0; i < r.pts.length; i += 2){ const p = r.pts[i]; const rr = w <= 2.6 ? w / 2 + 3 : w / 2 + 7; const fx = (p[0]/FS)|0, fy = (p[1]/FS)|0, k = Math.ceil(rr/FS); for (let yy = fy-k; yy <= fy+k+2; yy++) for (let xx = fx-k; xx <= fx+k; xx++) if (xx>=0&&yy>=0&&xx<FW&&yy<FH) { mR[yy*FW+xx] = 1; if (r.s.clear !== false) occ[yy*FW+xx] = 1; }; } }
+  markRifts(geo.rifts, occ);
   for (let i = 0; i < mS.length; i++) if (mS[i]) occ[i] = 1;
   const glyphs = [];
   const settle = placeSettlements(geo, {landAt, free, mark, glyphs, seed, occ, mS, mD, mR});
@@ -479,7 +481,7 @@ function renderMap(scale, withDecor, noFrame, opts){
   g.fillStyle = INK; g.globalAlpha = .33; for (const [x, y] of pl.stip){ g.fillRect(x - .65, y - .65, 1.3, 1.3); } g.globalAlpha = 1;
   g.beginPath(); for (const [x, y, l] of pl.snow){ g.moveTo(x, y); g.quadraticCurveTo(x + l/2, y - l*.35, x + l, y); } g.strokeStyle = INK; g.globalAlpha = .55; g.lineWidth = .8; g.lineCap = 'round'; g.stroke(); g.globalAlpha = 1;
   g.beginPath(); for (const [x, y, l] of pl.dash){ g.moveTo(x - l/2, y); g.lineTo(x + l/2, y); } g.strokeStyle = INK; g.globalAlpha = .5; g.lineWidth = .7; g.stroke(); g.globalAlpha = 1;
-  drawFields(g, pl.fields); drawRoutes(g, geo.routes); drawWalls(g, pl.walls, landL);
+  drawFields(g, pl.fields); drawRoutes(g, geo.routes); drawWalls(g, pl.walls, landL); drawRifts(g, geo.rifts);
   // glyphs
   for (const o of pl.glyphs){ if (o.t === 'h') drawHut(g, o.x, o.y, o.s, o.r); else if (o.t === 'wt') drawWallTower(g, o.x, o.y, o.s, o.cone); else if (o.t === 'sp') drawSpire(g, o.x, o.y, o.s); else if (o.t === 'kp') drawKeep(g, o.x, o.y, o.s); else if (o.t === 'm') drawMountain(g, o.x, o.y, o.s, o.r); else if (drawNatureGlyph(g, o)){} else if (o.t === 'b') drawTuft(g, o.x, o.y, o.s, o.r); else drawWet(g, o.x, o.y, o.s, o.r); }
   drawStains(g, geo.stains, scale);

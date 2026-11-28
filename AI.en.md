@@ -36,6 +36,7 @@ Layers: `layer` is the active layer number (0 — ground, >0 — floating island
 | `terrain` | landscape | `terrain`: snow, tundra, steppe, meadow, hills, marsh, desert; `density` 0.1–3; for hills `size` 12–70 |
 | `vill` / `town` / `fort` | village / town / fortress | `density`, `scale` 0.4–3; village `fields` 0–3; town/fortress `wall`, `wallMode`: land, always, never |
 | `stain` | ink or paint stain | `color` `#rrggbb`, `opacity` 0.05–1, `blur` 0–40 |
+| `rift` | fault: `shape: 'line'` — a crack (`width` 1–30, `branches` 0–4); polygon/ellipse — `sunk: true` a crater or sinkhole (`depth` 0.2–3), `sunk: false` — a crack along the outline | `width`, `branches`, `sunk`, `depth` |
 | `region` | generation area (not drawn) | `streams`, `ponds`, `marsh`, `pull` |
 | `river` | river (`shape: 'line'`) | `width` 1–30 (up to 4.5 — a single line), `taper` |
 | `road` / `rail` / `path` | road / railway / dashed trail (`shape: 'line'`) | `width` 0.4–3 |

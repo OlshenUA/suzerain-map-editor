@@ -14,7 +14,7 @@
 ## Архітектура
 
 - Без фреймворків і бандлера. `index.html` підключає **класичні скрипти** (не ES-модулі) у суворому порядку:
-  `i18n.js → i18n-en.js → default-map.js → core.js → render.js → nature.js → labels.js → layers.js → generators.js → templates.js → library.js → brush.js → ai.js → ui.js`.
+  `i18n.js → i18n-en.js → default-map.js → core.js → render.js → nature.js → rifts.js → labels.js → layers.js → generators.js → templates.js → library.js → brush.js → ai.js → ui.js`.
   Усі верхньорівневі `const`/`let`/`function` спільні на глобальному рівні.
   Код, що виконується при завантаженні, стоїть тільки в `ui.js` (секція `boot`).
   Якщо переходити на модулі, роби це свідомо і для всього проєкту одразу.
@@ -33,6 +33,7 @@
 - **Стартовий екран** (`openStart` у `library.js`): мова (першого разу), «Продовжити» останню мапу, нова мапа з шаблону (шаблон з `example: true` позначено «Приклад від автора»). Поки бібліотека порожня, за екраном показано Крайтрен, але нічого не зберігається, доки користувач не створить мапу.
 - **Підписи** (`labels.js`): поля `label, labelPos, labelSize, labelFont, labelItalic, labelSpread, labelAt` у штампів, зон і кривих. Зони й штампи — `below|above|left|right`, зони ще `inside` (`zoneLabelLayout`: найглибша точка + найдовша хорда біля головної осі, текст розходиться й повертається); криві — текст по літерах уздовж лінії, `above|below`, `labelAt` 0–1. Малюються живими в `drawDecor` (`drawShapeLabels`), потрапляють в експорт.
 - **Шари** (`layers.js`): `data.layer` — активний шар (0 земля, >0 летючі острови, <0 підземелля). Активний шар лежить у `data.shapes/stamps/texts` (увесь редактор працює з ним без змін), решта — у `data.layers[n] = {shapes, stamps, texts}`; `swapLayer`/`withLayer` міняють їх місцями. Порожній шар (крім 0) зникає при виході. Рендер — `renderLayered()`: на 0 тіні островів (`drawLayerShadows` через `opts.under`), на >0 фон із нижніх шарів (`layerBackdrop`, кешується в `layerCache`) + `renderMap(…, {mode:'island'})` з конусом скелі (`drawCliffs`), на <0 `mode:'cave'` — поза сушею скеля (`drawRock`). Штамп з `exit: n` видно й на шарі n (`exitStamps`). Перемикач `#layerBar`, PageUp/PageDown.
+- **Розломи** (`rifts.js`): `kind:'rift'`. Кривою (`shape:'line'`, у панелі кривих) — тріщина `drawCrack`; полігон/овал — `sunk !== false` кратер/провал `drawCrater` (штрихи від краю всередину, густіші на тіньовому боці; `depth`), `sunk:false` — тріщина по контуру. `width`, `branches`. Оскільки `rift` буває і лінією, і зоною, лінійність визначає `shape`/`drawing.line`, а не `isLineKind`. Дерева в провалах і вздовж тріщин не ростуть (`markRifts`).
 - Вибір мишкою: спершу лінії (річки, шляхи), далі найменша площинна фігура під курсором.
 - Сітка зайнятості `occ` (1/4 роздільності, `FS = 4`) у `placeGlyphs` не дає горам, деревам і сніговим позначкам налазити на річки, шляхи, штампи й поселення.
 - Поле відстані до води `buildField()` (chamfer) використовується для «на суші з відступом».

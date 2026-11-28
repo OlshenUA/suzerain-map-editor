@@ -32,6 +32,7 @@ shapes: [{id, kind, shape: 'poly'|'ellipse'|'line', pts: [[x,y],...] (or cx, cy,
 - region — generation area (not drawn)
 - river (shape 'line') — river: width 1–30 (up to 4.5 a single line), taper
 - road / rail / path (shape 'line') — road / railway / dashed trail: width 0.4–3
+- rift — fault / crater: shape 'line' — a crack along the curve (width 1–30, branches 0–4); poly or ellipse — sunk: true — a crater or sinkhole (depth 0.2–3), sunk: false — only a crack along the outline (width, branches)
 stamps: [{id, type, x, y, size, rot, label, labelPos, labelSize}]; type = ${stamps}
 texts: [{id, x, y, w, h, text, size, font, align, bg, italic, bold}]
 settings: {scatter (0–3, single trees), scatterTrees}
@@ -58,6 +59,7 @@ shapes: [{id, kind, shape: 'poly'|'ellipse'|'line', pts: [[x,y],...] (або cx,
 - region — область генерації (не малюється)
 - river (shape 'line') — річка: width 1–30 (до 4.5 — одна лінія), taper
 - road / rail / path (shape 'line') — дорога / залізниця / пунктирний шлях: width 0.4–3
+- rift — розлом / кратер: shape 'line' — тріщина вздовж кривої (width 1–30, branches 0–4); poly чи ellipse — sunk: true — кратер чи провал (depth 0.2–3), sunk: false — лише тріщина по контуру (width, branches)
 stamps: [{id, type, x, y, size, rot, label, labelPos, labelSize}]; type = ${stamps}
 texts: [{id, x, y, w, h, text, size, font, align, bg, italic, bold}]
 settings: {scatter (0–3, окремі дерева), scatterTrees}
@@ -115,7 +117,7 @@ function aiCheckShape(s){
   if (!KIND_NAME[s.kind] || s.kind === 'marsh') throw new Error(L(`невідомий kind «${s.kind}»`, `unknown kind “${s.kind}”`));
   if (s.kind === 'terrain' && !TERRAINS[s.terrain]) throw new Error(L(`невідомий terrain «${s.terrain}»`, `unknown terrain “${s.terrain}”`));
   if (s.trees != null && !TREE_TYPES[s.trees]) throw new Error(L(`невідомий вид дерев «${s.trees}»`, `unknown tree type “${s.trees}”`));
-  const line = isLineKind(s.kind);
+  const line = isLineKind(s.kind) || (s.kind === 'rift' && s.shape === 'line');
   if (line){ s.shape = 'line'; s.pts = aiPts(s.pts, 2); }
   else if (s.shape === 'ellipse'){ for (const k of ['cx', 'cy', 'rx', 'ry']) if (!aiNum(s[k])) throw new Error(L(`овалу потрібне число ${k}`, `an ellipse needs a number ${k}`)); s.rot = aiNum(s.rot) ? s.rot : 0; delete s.pts; }
   else { s.shape = 'poly'; s.pts = aiPts(s.pts, 3); }

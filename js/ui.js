@@ -12,7 +12,7 @@ let vmode = null; let ghost = null; let hoverV = -1;
 let selObj = null;
 // autoFit: поки користувач не рухав вигляд, мапа вписується заново при зміні розміру сцени
 let showOutlines = true; let selected = null; let activeVertex = -1; let drawing = null; let hover = null;
-const visibleKinds = {land: true, lake: true, mountain: true, forest: true, marsh: true, terrain: true, river: true, region: true, vill: true, town: true, fort: true, road: true, rail: true, path: true, stain: true, stamp: true, text: true};
+const visibleKinds = {land: true, lake: true, mountain: true, forest: true, marsh: true, terrain: true, river: true, region: true, rift: true, vill: true, town: true, fort: true, road: true, rail: true, path: true, stain: true, stamp: true, text: true};
 function draw(){
   const g = vctx; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, view.width, view.height);
   g.setTransform(dpr*vs.scale, 0, 0, dpr*vs.scale, dpr*vs.ox, dpr*vs.oy);
@@ -131,13 +131,13 @@ document.getElementById('brushBar').addEventListener('click', e => { const b = e
 
 function shapeArea(s){ return s.shape === 'ellipse' ? Math.PI * s.rx * s.ry : polyArea(s.pts); }
 function hitShape(x, y){ const tol = 8 / vs.scale; if (!showOutlines) return null;
-  for (const k of ['road', 'rail', 'path', 'river']){ if (!visibleKinds[k]) continue; const list = data.shapes.filter(s => s.kind === k);
+  for (const k of ['road', 'rail', 'path', 'river', 'rift']){ if (!visibleKinds[k]) continue; const list = data.shapes.filter(s => s.kind === k && s.shape === 'line');
     for (let i = list.length - 1; i >= 0; i--){ const s = list[i];
       if (k === 'river'){ if (polyEdgeDist(x, y, s.pts, false) < Math.max(tol, (s.width||3)/2 + 3)) return s; }
-      else if (polyEdgeDist(x, y, s.pts, false) < Math.max(tol, 5)) return s; } }
+      else if (polyEdgeDist(x, y, s.pts, false) < Math.max(tol, k === 'rift' ? (s.width || 5)/2 + 3 : 5)) return s; } }
   // площинні: найменша фігура, що містить точку
   let best = null, ba = Infinity;
-  for (const s of data.shapes){ if (isLineKind(s.kind) || !visibleKinds[s.kind] || !inside(s, x, y)) continue; const a = shapeArea(s); if (a <= ba){ best = s; ba = a; } }
+  for (const s of data.shapes){ if (s.shape === 'line' || !visibleKinds[s.kind] || !inside(s, x, y)) continue; const a = shapeArea(s); if (a <= ba){ best = s; ba = a; } }
   return best; }
 function hitVertex(s, x, y){ const tol = 9 / vs.scale;
   if (s.shape === 'ellipse'){ const hs = ellipseHandles(s); for (let i = hs.length - 1; i >= 0; i--) if (Math.hypot(hs[i][0] - x, hs[i][1] - y) < tol) return i; return -1; }
@@ -151,7 +151,7 @@ function nearestOnPoly(x, y, pts, closed){ let best = null, bd = Infinity; const
 let snapMark = null;
 const ROUTE_KINDS = ['road', 'rail', 'path'];
 function isLineKind(k){ return k === 'river' || ROUTE_KINDS.includes(k); }
-function snapLinePoint(kind, x, y, self, noSnap){ if (kind === 'river') return snapRiverPoint(x, y, self, noSnap);
+function snapLinePoint(kind, x, y, self, noSnap){ if (kind === 'river') return snapRiverPoint(x, y, self, noSnap); if (kind === 'rift'){ snapMark = null; return [Math.round(x*10)/10, Math.round(y*10)/10]; }
   snapMark = null; if (noSnap) return [Math.round(x*10)/10, Math.round(y*10)/10]; const tol = 14 / vs.scale; let best = null;
   for (const s of data.shapes){ if (s === self || !ROUTE_KINDS.includes(s.kind)) continue; for (const p of s.pts){ const d = Math.hypot(p[0] - x, p[1] - y); if (d < tol && (!best || d < best.d)) best = {x: p[0], y: p[1], d}; } }
   if (!best) for (const s of data.shapes){ if (s === self || !ROUTE_KINDS.includes(s.kind)) continue; const q = nearestOnPoly(x, y, s.pts, false); if (q && q.d < tol && (!best || q.d < best.d)) best = {x: q.x, y: q.y, d: q.d}; }
@@ -212,9 +212,9 @@ view.addEventListener('pointerdown', e => {
   if (tool === 'ellipse'){ drawing = {type: 'ellipse', kind: newKind, x0: x, y0: y, e: null}; drag = {type: 'ellipse'}; return; }
   if (tool === 'brush' && e.button === 0){ brushStroke = {pts: [[x, y]], r: brushOpts.size / 2, erase: brushOpts.erase || e.altKey}; drag = {type: 'brush'}; draw(); return; }
   if (tool === 'poly' || tool === 'curve'){
-    if (!drawing) drawing = {type: 'poly', kind: tool === 'curve' ? newCurve : newKind, pts: []};
+    if (!drawing) drawing = {type: 'poly', kind: tool === 'curve' ? newCurve : newKind, pts: [], line: tool === 'curve'};
     const last = drawing.pts[drawing.pts.length - 1];
-    const sp = isLineKind(drawing.kind) ? snapLinePoint(drawing.kind, x, y, null, e.shiftKey) : [Math.round(x*10)/10, Math.round(y*10)/10];
+    const sp = drawing.line ? snapLinePoint(drawing.kind, x, y, null, e.shiftKey) : [Math.round(x*10)/10, Math.round(y*10)/10];
     if (!last || Math.hypot(last[0] - sp[0], last[1] - sp[1]) > 3 / vs.scale) drawing.pts.push(sp);
     draw(); }
 });
@@ -223,7 +223,7 @@ view.addEventListener('pointermove', e => {
   if (!drag && tool === 'select' && selected && selected.shape !== 'ellipse'){
     const ng = (vmode === 'add' || e.altKey) ? planInsert(selected, x, y, e.shiftKey) : null; const nh = vmode === 'remove' ? hitVertex(selected, x, y) : -1;
     if (ng || ghost || nh !== hoverV){ ghost = ng; hoverV = nh; if (!ng) snapMark = null; draw(); } }
-  if (drawing && drawing.type === 'poly'){ drawing.cursor = isLineKind(drawing.kind) ? snapLinePoint(drawing.kind, x, y, null, e.shiftKey) : [x, y]; draw(); }
+  if (drawing && drawing.type === 'poly'){ drawing.cursor = drawing.line ? snapLinePoint(drawing.kind, x, y, null, e.shiftKey) : [x, y]; draw(); }
   else if (tool === 'curve' && !drag){ snapLinePoint(newCurve, x, y, null, e.shiftKey); draw(); }
   if (tool === 'brush'){ brushCursor = [x, y]; if (drag && drag.type === 'brush' && brushStroke){ const l = brushStroke.pts[brushStroke.pts.length - 1]; if (Math.hypot(x - l[0], y - l[1]) > Math.max(1.5 / vs.scale, brushStroke.r * .15)) brushStroke.pts.push([x, y]); } if (!drag || drag.type === 'brush'){ draw(); if (drag) return; } }
   if (!drag) return;
@@ -264,12 +264,12 @@ view.addEventListener('dblclick', e => {
     if (best >= 0){ pushUndo(); pts.splice(best + 1, 0, [Math.round(x*10)/10, Math.round(y*10)/10]); activeVertex = best + 1; changed(); } }
 });
 function roundE(e){ return {cx: Math.round(e.cx), cy: Math.round(e.cy), rx: Math.round(e.rx), ry: Math.round(e.ry), rot: e.rot || 0}; }
-function defaultsFor(k){ if (k === 'mountain') return {min: 28, max: 90, density: 1}; if (k === 'forest') return {tree: 11, density: 1, trees: newTrees}; if (k === 'terrain') return {terrain: newTerrain, density: 1}; if (k === 'marsh') return {density: 1}; if (k === 'road' || k === 'rail' || k === 'path') return {width: 1}; if (k === 'stain') return {color: lastStainColor, opacity: .45, blur: 8, rough: 1.2, edge: .5, grain: .4, drops: 6}; if (k === 'vill') return {density: 1, fields: 1}; if (k === 'town') return {density: 1, wall: 5}; if (k === 'fort') return {density: 1, wall: 7}; if (k === 'region') return {streams: 1, ponds: 1, marsh: 1, pull: 1}; if (k === 'river') return {width: lastRiverWidth}; return {}; }
+function defaultsFor(k){ if (k === 'rift') return {width: 5, sunk: true, depth: 1, branches: 1}; if (k === 'mountain') return {min: 28, max: 90, density: 1}; if (k === 'forest') return {tree: 11, density: 1, trees: newTrees}; if (k === 'terrain') return {terrain: newTerrain, density: 1}; if (k === 'marsh') return {density: 1}; if (k === 'road' || k === 'rail' || k === 'path') return {width: 1}; if (k === 'stain') return {color: lastStainColor, opacity: .45, blur: 8, rough: 1.2, edge: .5, grain: .4, drops: 6}; if (k === 'vill') return {density: 1, fields: 1}; if (k === 'town') return {density: 1, wall: 5}; if (k === 'fort') return {density: 1, wall: 7}; if (k === 'region') return {streams: 1, ponds: 1, marsh: 1, pull: 1}; if (k === 'river') return {width: lastRiverWidth}; return {}; }
 let lastRiverWidth = 3; let lastStainColor = '#2f6b3a';
-function finishPoly(){ if (!drawing) return; const pts = drawing.pts; const min = isLineKind(drawing.kind) ? 2 : 3;
+function finishPoly(){ if (!drawing) return; const pts = drawing.pts; const line = drawing.line ?? isLineKind(drawing.kind); const min = line ? 2 : 3;
   // dblclick adds duplicate points: drop near-duplicates
   const clean = []; for (const p of pts){ const l = clean[clean.length - 1]; if (!l || Math.hypot(l[0] - p[0], l[1] - p[1]) > 2) clean.push(p); }
-  if (clean.length >= min){ pushUndo(); const s = Object.assign({id: 's' + (uid++), kind: drawing.kind, shape: isLineKind(drawing.kind) ? 'line' : 'poly', pts: clean}, defaultsFor(drawing.kind)); data.shapes.push(s); selected = s; changed(); }
+  if (clean.length >= min){ pushUndo(); const s = Object.assign({id: 's' + (uid++), kind: drawing.kind, shape: line ? 'line' : 'poly', pts: clean}, defaultsFor(drawing.kind)); data.shapes.push(s); selected = s; changed(); }
   drawing = null; snapMark = null; setTool('select'); renderSide(); draw(); }
 view.addEventListener('wheel', e => { e.preventDefault(); const [sx, sy] = pos(e); const f = Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015)); const ns = Math.min(4, Math.max(.08, vs.scale * f));
   autoFit = false; const [wx, wy] = toWorld(sx, sy); vs.scale = ns; vs.ox = sx - wx*ns; vs.oy = sy - wy*ns; draw(); }, {passive: false});
@@ -413,7 +413,12 @@ function renderPanel(side){
   if (selected){ const s = selected; h += `<div class="kindtag"><span class="dot" style="background:${shapeColor(s)}"></span>${s.kind === 'terrain' ? 'Ландшафт · ' + TERRAINS[terrainOf(s)].name : KIND_NAME[s.kind]}${s.shape === 'ellipse' ? ' · овал' : s.shape === 'poly' ? ' · полігон' : ''}</div>`;
     if (s.shape === 'line') h += `<label class="check"><input type="checkbox" id="lineClear" ${s.clear !== false ? 'checked' : ''}> Прибирати дерева, гори й сніг уздовж</label>`;
     if (ROUTE_KINDS.includes(s.kind)){ h += `<div class="row"><label for="routeSel">Вид</label><select id="routeSel">${ROUTE_KINDS.map(k => `<option value="${k}" ${k === s.kind ? 'selected' : ''}>${KIND_NAME[k]}</option>`).join('')}</select></div>` + slider('Товщина', 'width', .4, 3, .05, s); }
-    if (s.shape !== 'line'){ h += `<div class="row"><label for="kindSel">Тип зони</label><select id="kindSel">${['land','lake','mountain','forest','terrain','stain','vill','town','fort','region'].map(k => `<option value="${k}" ${k === s.kind ? 'selected' : ''}>${KIND_NAME[k]}</option>`).join('')}</select></div>`; }
+    if (s.shape !== 'line'){ h += `<div class="row"><label for="kindSel">Тип зони</label><select id="kindSel">${['land','lake','mountain','forest','terrain','rift','stain','vill','town','fort','region'].map(k => `<option value="${k}" ${k === s.kind ? 'selected' : ''}>${KIND_NAME[k]}</option>`).join('')}</select></div>`; }
+    if (s.kind === 'rift'){ if (s.width == null) s.width = 5; if (s.depth == null) s.depth = 1; if (s.branches == null) s.branches = 1; const sunk = s.shape !== 'line' && s.sunk !== false;
+      if (s.shape !== 'line') h += `<div class="row"><label for="riftMode">Що занижено</label><select id="riftMode"><option value="sunk" ${sunk ? 'selected' : ''}>Уся зона (кратер, провал)</option><option value="edge" ${sunk ? '' : 'selected'}>Лише по контуру (тріщина)</option></select></div>`;
+      if (sunk) h += slider('Глибина', 'depth', .2, 3, .05, s) + `<label class="check"><input type="checkbox" id="zoneClear" ${s.clear !== false ? 'checked' : ''}> Прибирати дерева, гори й сніг у зоні</label>`;
+      else h += slider('Ширина тріщини', 'width', 1, 30, .5, s) + slider('Відгалуження', 'branches', 0, 4, .1, s);
+      h += `<p class="help" style="padding:0;margin:4px 0 10px">${s.shape === 'line' ? 'Тріщина в землі вздовж кривої — сліди землетрусу, розколи.' : sunk ? 'Кратер чи провал: схили штрихуються від краю всередину, густіше на тіньовому боці.' : 'Розкол по контуру зони, всередині земля лишається як є.'}</p>`; }
     if (s.kind === 'mountain'){ h += slider('Найменші гори', 'min', 12, 80, 1, s) + slider('Найбільші гори', 'max', 20, 160, 1, s) + slider('Щільність', 'density', .2, 2, .05, s); }
     if (s.kind === 'forest'){ h += `<div class="row"><label for="treesSel">Дерева</label><select id="treesSel">${Object.entries(TREE_TYPES).map(([k, v]) => `<option value="${k}" ${k === treesOf(s) ? 'selected' : ''}>${v.name}</option>`).join('')}</select></div>` + slider('Розмір дерев', 'tree', 6, 24, .5, s) + slider('Щільність', 'density', .1, 2, .05, s); }
     if (s.kind === 'stain'){ const [r0, g0, b0] = hexToRgb(s.color); const pal = INK_PRESETS.concat((data.palette || []).map(p => Object.assign({own: true}, p)));
@@ -461,7 +466,7 @@ function renderPanel(side){
     } else h += `<p class="help" style="padding:0;margin-top:10px">Щоб додавати чи видаляти точки, спершу перетворіть овал на полігон.</p>`;
   } else {
     h += `<h2>Мапа</h2><div id="mapBody"></div><h2>Контури й вибір</h2><label class="check"><input type="checkbox" id="outChk" ${showOutlines ? 'checked' : ''}> Показувати контури</label>`;
-    h += `<div class="vis">` + ['land','lake','mountain','forest','terrain','river','road','rail','path','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('') + `</div>`;
+    h += `<div class="vis">` + ['land','lake','mountain','forest','terrain','river','road','rail','path','rift','stain','vill','town','fort','region'].map(k => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:${KIND_COLOR[k]}"></span>${KIND_NAME[k]}</label>`).join('') + [['stamp', 'Штампи'], ['text', 'Написи']].map(([k, n]) => `<label class="check"><input type="checkbox" data-vis="${k}" ${visibleKinds[k] ? 'checked' : ''}><span class="dot" style="background:#d39a4a"></span>${n}</label>`).join('') + `</div>`;
   }
   side.innerHTML = h;
   if (selected){ const sel = selected; bindSliders(side, sel, v => { if (sel.kind === 'river') lastRiverWidth = v; changed(); }); }
@@ -485,6 +490,7 @@ function renderPanel(side){
     q('stSave').addEventListener('click', () => { const nm = q('stName').value.trim() || selected.color; pushUndo(); if (!Array.isArray(data.palette)) data.palette = []; data.palette.push({name: nm, c: selected.color}); changed(true); renderSide(); toast('Колір додано в палітру'); }); }
   if (q('wallMode')) q('wallMode').addEventListener('change', e => { pushUndo(); selected.wallMode = e.target.value; changed(); });
   side.querySelectorAll('[data-ign]').forEach(c => c.addEventListener('change', () => { pushUndo(); selected.ignore = Object.assign({}, selected.ignore, {[c.dataset.ign]: c.checked}); changed(); }));
+  if (q('riftMode')) q('riftMode').addEventListener('change', e => { pushUndo(); selected.sunk = e.target.value === 'sunk'; changed(); renderSide(); });
   if (q('zoneClear')) q('zoneClear').addEventListener('change', e => { pushUndo(); selected.clear = e.target.checked; changed(); });
   if (q('lineClear')) q('lineClear').addEventListener('change', e => { pushUndo(); selected.clear = e.target.checked; changed(); });
   if (q('routeSel')) q('routeSel').addEventListener('change', e => { pushUndo(); selected.kind = e.target.value; changed(); renderSide(); });

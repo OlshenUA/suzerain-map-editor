@@ -38,6 +38,7 @@ English version: [AI.en.md](AI.en.md)
 | `terrain` | ландшафт | `terrain`: snow, tundra, steppe, meadow, hills, marsh, desert; `density` 0.1–3; для hills `size` 12–70 |
 | `vill` / `town` / `fort` | село / місто / фортеця | `density`, `scale` 0.4–3; село `fields` 0–3; місто/фортеця `wall`, `wallMode`: land, always, never |
 | `stain` | пляма чорнила/фарби | `color` `#rrggbb`, `opacity` 0.05–1, `blur` 0–40 |
+| `rift` | розлом: `shape: 'line'` — тріщина (`width` 1–30, `branches` 0–4); полігон/овал — `sunk: true` кратер чи провал (`depth` 0.2–3), `sunk: false` — тріщина по контуру | `width`, `branches`, `sunk`, `depth` |
 | `region` | область генерації (не малюється) | `streams`, `ponds`, `marsh`, `pull` |
 | `river` | річка (`shape: 'line'`) | `width` 1–30 (до 4.5 — одна лінія), `taper` |
 | `road` / `rail` / `path` | дорога / залізниця / пунктирний шлях (`shape: 'line'`) | `width` 0.4–3 |

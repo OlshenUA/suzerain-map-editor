@@ -5,7 +5,11 @@ Object.assign(EN, {
   // ---------- типи фігур, ландшафт, дерева, штампи ----------
   'Суша': 'Land', 'Озеро': 'Lake', 'Гори': 'Mountains', 'Ліс': 'Forest', 'Болото': 'Marsh', 'Ландшафт': 'Landscape', 'Річка': 'River',
   'Область генерації': 'Generation area', 'Село': 'Village', 'Місто': 'Town', 'Фортеця': 'Fortress', 'Дорога': 'Road', 'Залізниця': 'Railway',
-  'Шлях': 'Trail', 'Шлях (пунктир)': 'Trail (dashed)', 'Пляма': 'Stain',
+  'Шлях': 'Trail', 'Шлях (пунктир)': 'Trail (dashed)', 'Пляма': 'Stain', 'Розлом': 'Fault', 'Розлом / кратер': 'Fault / crater', 'Розлом (тріщина)': 'Fault (crack)',
+  'Що занижено': 'What is sunken', 'Уся зона (кратер, провал)': 'The whole zone (crater, sinkhole)', 'Лише по контуру (тріщина)': 'Only the outline (crack)', 'Глибина': 'Depth', 'Ширина тріщини': 'Crack width', 'Відгалуження': 'Branches',
+  'Тріщина в землі вздовж кривої — сліди землетрусу, розколи.': 'A crack in the ground along the curve — earthquake scars, fissures.',
+  'Кратер чи провал: схили штрихуються від краю всередину, густіше на тіньовому боці.': 'A crater or sinkhole: slopes are hatched from the edge inwards, denser on the shadow side.',
+  'Розкол по контуру зони, всередині земля лишається як є.': 'A fissure along the zone outline; the ground inside stays as it is.',
   // ---------- шари ----------
   'Шар вище (PageUp)': 'Layer up (PageUp)', 'Шар нижче (PageDown)': 'Layer down (PageDown)', 'Шари': 'Layers', 'Вихід на шар': 'Exit to layer', 'Немає': 'None',
   'Штамп буде видно й на тому шарі — наприклад, печеру на землі й у підземеллі.': 'The stamp also shows on that layer — e.g. a cave on the ground and underground.',
